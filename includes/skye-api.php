@@ -32,8 +32,8 @@ add_action( 'rest_api_init', function() {
     register_rest_route( SKYE_API_NAMESPACE_V1, '/register', array(
         'methods' => 'POST',
         'callback' => function($data) {
-            $username = (isset($data['username'])) ? $data['username'] : null;
-            $email = (isset($data['email'])) ? $data['email'] : null;
+            $username = (isset($data['username'])) ? sanitize_text_field($data['username']) : null;
+            $email = (isset($data['email'])) ? sanitize_email($data['email']) : null;
             $password = (isset($data['password'])) ? $data['password'] : null;
 
             //return ID of the newly registerd user
@@ -44,8 +44,8 @@ add_action( 'rest_api_init', function() {
     register_rest_route( SKYE_API_NAMESPACE_V1, '/authenticate', array(
         'methods' => 'POST',
         'callback' => function($data) {
-            $username = (isset($data['username'])) ? $data['username'] : null;
-            $email = (isset($data['email'])) ? $data['email'] : null;
+            $username = (isset($data['username'])) ? sanitize_text_field($data['username']) : null;
+            $email = (isset($data['email'])) ? sanitize_email($data['email']) : null;
             $password = (isset($data['password'])) ? $data['password'] : null;
 
             return wp_authenticate( (!is_null($username)) ? $username : $email, $password);
@@ -72,7 +72,7 @@ add_action( 'rest_api_init', function() {
             );
             foreach ($address_keys as $key) {
                 if (isset($data[$key]))
-                    update_user_meta( $user_id, 'billing_' . $key, $data[$key]);
+                    update_user_meta( $user_id, 'billing_' . $key, sanitize_text_field($data[$key]));
             }
 
             return array(
@@ -103,7 +103,7 @@ add_action( 'rest_api_init', function() {
             );
             foreach ($address_keys as $key) {
                 if (isset($data[$key]))
-                    update_user_meta( $user_id, 'shipping_' . $key, $data[$key]);
+                    update_user_meta( $user_id, 'shipping_' . $key, sanitize_text_field($data[$key]));
             }
 
             return array(
@@ -139,7 +139,7 @@ add_action( 'rest_api_init', function() {
             );
             foreach($user_keys as $key) {
                 if (isset($data[$key]))
-                    $array_to_change[$key] = $data[$key];
+                    $array_to_change[$key] = sanitize_text_field($data[$key]);
             }
             //return id of the updated user
             return wp_update_user($array_to_change);
@@ -396,8 +396,8 @@ add_action( 'rest_api_init', function() {
         'callback' => function($data) {
             $user_id = $data['user'];
             $allow_guest = (isset($data['allow_guest']));
-            $status = (isset($data['status'])) ? $data['status'] : 'wc-pending';
-            $order_note = (isset($data['order_note'])) ? $data['order_note'] : 'Ordered from API';
+            $status = (isset($data['status'])) ? sanitize_text_field($data['status']) : 'wc-pending';
+            $order_note = (isset($data['order_note'])) ? sanitize_text_field($data['order_note']) : 'Ordered from API';
             $return_array = array();
             //to add address to url: url?billing_address%Bfirst_name%5D=SEUN&billing_address%5Blast_name%5D=OYENIYI....
             //%5B is to select variable array with they key eg: address%5Bfirst_name
@@ -526,8 +526,8 @@ add_action( 'rest_api_init', function() {
         'callback' => function($data) {
             $user_id = $data['user_id'];
             $order_id  = $data['order_id'];
-            $status  = isset($data['status']) ? $data['status'] : null;
-            $order_note  = isset($data['order_note']) ? $data['order_note'] : 'Updated from API';
+            $status  = isset($data['status']) ? sanitize_text_field($data['status']) : null;
+            $order_note  = isset($data['order_note']) ? sanitize_text_field($data['order_note']) : 'Updated from API';
             $return_array = array();
             //to add address to url: url?billing_address%Bfirst_name%5D=SEUN&billing_address%5Blast_name%5D=OYENIYI....
             //%5B is to select variable array with they key eg: address%5Bfirst_name
@@ -587,7 +587,7 @@ add_action( 'rest_api_init', function() {
             //custom field
             if (!is_null($custom_field)) {
                 foreach ($custom_field as $key => $val) {
-                    update_post_meta($order_id, $key, $val);
+                    update_post_meta($order_id, $key, sanitize_text_field($val));
                 }
                 $return_array['custom_field_updated'] = true;
             }
