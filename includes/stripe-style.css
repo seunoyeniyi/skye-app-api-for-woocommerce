@@ -1,0 +1,10 @@
+
+header, #masthead, div.storefront-breadcrumb, footer, aside, div.woocommerce-form-coupon-toggle {
+    display: none;
+}
+div.payment_box.payment_method_stripe, div.payment_box.payment_method_stripe {
+    display: block;
+}
+ul.wc_payment_methods > :not(li.payment_method_stripe), ul.payment_methods methods > :not(li.payment_method_stripe) {
+    display: none;
+}

@@ -35,9 +35,42 @@ add_action( 'rest_api_init', function() {
             $username = (isset($data['username'])) ? sanitize_text_field($data['username']) : null;
             $email = (isset($data['email'])) ? sanitize_email($data['email']) : null;
             $password = (isset($data['password'])) ? $data['password'] : null;
-
+            $register_type = (isset($data['register_type'])) ? $data['register_type'] : null;
+            $tron_wallet = (isset($data['tron_wallet'])) ? $data['tron_wallet'] : null;
             //return ID of the newly registerd user
-            return wp_create_user($username, $password, $email);
+            if (!is_null($register_type)) {
+                $register_id = (isset($data['register_id'])) ? $data['register_id'] : "";
+                $username = (isset($data['username'])) ? sanitize_text_field($data['username']) : null;
+                $email = (isset($data['email'])) ? sanitize_email($data['email']) : null;
+                if (!sk_user_exist_by_login_type($register_type, $register_id)) {
+                    //register the user;
+                    $user_id = wp_create_user($username, wp_generate_password(8), $email);
+                    if (is_numeric($user_id)) {
+                        update_user_meta( $user_id, 'sk_' . $register_type, $register_id); //update the user meta to have the login type
+                        return sk_get_user_info($user_id);
+                    } else {
+                        return $user_id;
+                    }
+                } else {
+                    return array(
+                        'code' => 'id_already_registered',
+                        'message' => 'This account has been registered already!',
+                        'data' => null
+                    );
+                }
+
+            } else {
+                $user_id = wp_create_user($username, $password, $email);
+            if (!is_null($tron_wallet)) { //add tron wallet to user profile
+                update_user_meta( $user_id, 'tron_wallet', $tron_wallet );
+            }
+            if (is_numeric($user_id)) {
+                return sk_get_user_info($user_id);
+            } else {
+                return $user_id;
+            }
+            }
+            
         }
     ));
     //confirm user login
@@ -47,8 +80,38 @@ add_action( 'rest_api_init', function() {
             $username = (isset($data['username'])) ? sanitize_text_field($data['username']) : null;
             $email = (isset($data['email'])) ? sanitize_email($data['email']) : null;
             $password = (isset($data['password'])) ? $data['password'] : null;
+            $replace_cart_user = (isset($data['replace_cart_user'])) ? $data['replace_cart_user'] : null;
+            $login_type = (isset($data['login_type'])) ? $data['login_type'] : null;
 
-            return wp_authenticate( (!is_null($username)) ? $username : $email, $password);
+            if (!is_null($login_type)) {
+                $login_id = (isset($data['login_id'])) ? $data['login_id'] : null;
+                if (sk_user_exist_by_login_type($login_type, $login_id)) {
+                    $user_info = sk_get_user_info_by_login_type($login_type, $login_id);
+                    if (!is_null($replace_cart_user)) {
+                            if (sk_user_cart_exists($replace_cart_user))
+                                sk_change_cart_user_id($replace_cart_user, $user_info['ID']);
+                    }
+                    return $user_info;
+                } else {
+                    return array(
+                        'code' => 'unregistered_id',
+                        'message' => 'This account has not been registered!',
+                        'data' => null
+                    );
+                }
+            } else {
+                $auth = wp_authenticate( (!is_null($username)) ? $username : $email, $password);
+                //replace cart user if set
+                if (!is_null($replace_cart_user)) {
+                    //if user exists
+                    if (property_exists($auth, 'data')) {
+                        if (sk_user_cart_exists($replace_cart_user))
+                            sk_change_cart_user_id($replace_cart_user, $auth->data->ID);
+                    }
+                }
+
+                return $auth;
+            }
         }
     ));
     //update user billing address
@@ -118,8 +181,10 @@ add_action( 'rest_api_init', function() {
         'methods' => 'GET',
         'callback' => function($data) {
             $user_id = $data['user'];
-            $user = get_userdata($user_id);
-            return $user;
+            $arr = sk_get_user_info($user_id);
+            if (isset($data['with_regions'])) $arr['regions'] = sk_get_regions();
+
+            return $arr;
         }
     ));
     //update user info
@@ -143,6 +208,83 @@ add_action( 'rest_api_init', function() {
             }
             //return id of the updated user
             return wp_update_user($array_to_change);
+        }
+    ));
+    //update user shipping address
+    register_rest_route( SKYE_API_NAMESPACE_V1, '/update-user-shipping-address/(?P<user>.*?)', array(
+        'methods' => 'POST',
+        'callback' => function($data) {
+            $user_id = $data['user'];
+            $customer = new WC_Customer($user_id);
+            if (isset($data['first_name'])) $customer->set_shipping_first_name($data['first_name']);
+            if (isset($data['last_name'])) $customer->set_shipping_last_name($data['last_name']);
+            if (isset($data['company'])) $customer->set_shipping_company($data['company']);
+            if (isset($data['country'])) $customer->set_shipping_country($data['country']);
+            if (isset($data['state'])) $customer->set_shipping_state($data['state']);
+            if (isset($data['postcode'])) $customer->set_shipping_postcode($data['postcode']);
+            if (isset($data['city'])) $customer->set_shipping_city($data['city']);
+            if (isset($data['address_1'])) $customer->set_shipping_address($data['address_1']);
+            if (isset($data['address_2'])) $customer->set_shipping_address_2($data['address_2']);
+            //since there is no method to set phone and email, let set it into billing
+            if (isset($data['email'])) $customer->set_billing_email($data['email']);
+            if (isset($data['phone'])) $customer->set_billing_phone($data['phone']);
+
+            //update the user cart shipping and calculate cost
+            if (isset($data['selected_country']) && isset($data['selected_state'])) { //use country and state code
+                //update user cart shipping
+                sk_update_cart_shipping($user_id, $data['selected_country'], 
+                    $data['selected_state'], 
+                    (isset($data['postcode'])) ? $data['postcode'] : "", 
+                    (isset($data['shipping_provider'])) ? $data['shipping_provider'] : "woocommerce",
+                    (isset($data['shipping_provider_cost'])) ? $data['shipping_provider_cost'] : 0
+                );
+            } else { //use name of the shipping country and state
+                sk_update_cart_shipping_by_name(
+                    $user_id,
+                    (isset($data['country'])) ? $data['country'] : "",
+                    (isset($data['state'])) ? $data['state'] : "",
+                    (isset($data['postcode'])) ? $data['postcode'] : "",
+                    (isset($data['shipping_provider'])) ? $data['shipping_provider'] : "woocommerce",
+                    (isset($data['shipping_provider_cost'])) ? $data['shipping_provider_cost'] : 0
+                );
+            }
+            
+            $array = array();
+            if ($customer->save()) {
+                $array['code'] = "saved";
+            } else {
+                $array['code'] = "not-saved";
+            }
+            $array['data'] = sk_get_user_shipping_address($user_id);
+            return $array;
+        }
+    ));
+    //update user billing address
+    register_rest_route( SKYE_API_NAMESPACE_V1, '/update-user-billing-address/(?P<user>.*?)', array(
+        'methods' => 'POST',
+        'callback' => function($data) {
+            $user_id = $data['user'];
+            $customer = new WC_Customer($user_id);
+            if (isset($data['first_name'])) $customer->set_billing_first_name($data['first_name']);
+            if (isset($data['last_name'])) $customer->set_billing_last_name($data['last_name']);
+            if (isset($data['company'])) $customer->set_billing_company($data['company']);
+            if (isset($data['country'])) $customer->set_billing_country($data['country']);
+            if (isset($data['state'])) $customer->set_billing_state($data['state']);
+            if (isset($data['postcode'])) $customer->set_billing_postcode($data['postcode']);
+            if (isset($data['city'])) $customer->set_billing_city($data['city']);
+            if (isset($data['address_1'])) $customer->set_billing_address($data['address_1']);
+            if (isset($data['address_2'])) $customer->set_billing_address_2($data['address_2']);
+            if (isset($data['email'])) $customer->set_billing_email($data['email']);
+            if (isset($data['phone'])) $customer->set_billing_phone($data['phone']);
+            
+            $array = array();
+            if ($customer->save()) {
+                $array['code'] = "saved";
+            } else {
+                $array['code'] = "not-saved";
+            }
+            $array['data'] = sk_get_user_shipping_address($user_id);
+            return $array;
         }
     ));
      //change user password
@@ -207,14 +349,41 @@ add_action( 'rest_api_init', function() {
             $post_in = isset($data['ids']) ? explode(',', rtrim($data['ids'], ',')) : null;
             $search = isset($data['search']) ? $data['search'] : null;
 
-            $query = new WP_Query(array(
+            $query_args = array(
                 'post_type' => 'product',
                 'posts_per_page' => $post_per_page,
                 'paged' => $paged,
                 'product_cat' => $product_cat,
                 'post__in' => $post_in,
                 's' => $search,
-            ));
+            );
+            if (isset($data['meta_key'])) $query_args['meta_key'] = $data['meta_key'];
+            if (isset($data['orderby'])) $query_args['orderby'] = $data['orderby'];
+            if (isset($data['order'])) $query_args['order'] = $data['order'];
+            if (isset($data['price_range'])) { 
+                $price_btw = explode('|', $data['price_range']);
+                $query_args['meta_query'] = array(
+                    array(
+                        'key' => '_price',
+                        'value' => array($price_btw[0], $price_btw[1]),
+                        'compare' => 'BETWEEN',
+                        'type' => 'NUMERIC'
+                    )
+                );
+            }
+            // 			for featured products
+			if (isset($data['featured'])) { 
+                $query_args['tax_query'] = array(
+                    array(
+                        'taxonomy' => 'product_visibility',
+                        'field'    => 'name',
+                        'terms'    => 'featured',
+                    )
+                );
+            }
+            
+            $query = new WP_Query($query_args);
+            
 
             if (!$query->have_posts())
             return null;
@@ -223,7 +392,7 @@ add_action( 'rest_api_init', function() {
 
             while($query->have_posts()) {
                 $query->the_post();
-                $product_array["results"][] = sk_get_product_array(get_the_ID());
+                $product_array["results"][] = sk_get_product_array(get_the_ID(), isset($data['user_id']) ? $data['user_id'] : null);
                 }
     
             // add pagination
@@ -233,7 +402,69 @@ add_action( 'rest_api_init', function() {
             return $product_array;
         }
     ));
+    //simple products page
+    register_rest_route( SKYE_API_NAMESPACE_V1, '/simple-products', array(
+        'methods' => 'GET',
+        'callback' => function($data) {
+            $paged = isset($data['paged']) ? $data['paged'] : 1;
+            $post_per_page = isset($data['per_page']) ? $data['per_page'] : 20;
+            $product_cat = isset($data['cat']) ? $data['cat'] : null;
+            $post_in = isset($data['ids']) ? explode(',', rtrim($data['ids'], ',')) : null;
+            $search = isset($data['search']) ? $data['search'] : null;
 
+            $query_args = array(
+                'post_type' => 'product',
+                'posts_per_page' => $post_per_page,
+                'paged' => $paged,
+                'product_cat' => $product_cat,
+                'post__in' => $post_in,
+                's' => $search,
+            );
+            if (isset($data['meta_key'])) $query_args['meta_key'] = $data['meta_key'];
+            if (isset($data['orderby'])) $query_args['orderby'] = $data['orderby'];
+            if (isset($data['order'])) $query_args['order'] = $data['order'];
+            if (isset($data['price_range'])) { 
+                $price_btw = explode('|', $data['price_range']);
+                $query_args['meta_query'] = array(
+                    array(
+                        'key' => '_price',
+                        'value' => array($price_btw[0], $price_btw[1]),
+                        'compare' => 'BETWEEN',
+                        'type' => 'NUMERIC'
+                    )
+                );
+            }
+            // 			for featured products
+			if (isset($data['featured'])) { 
+                $query_args['tax_query'] = array(
+                    array(
+                        'taxonomy' => 'product_visibility',
+                        'field'    => 'name',
+                        'terms'    => 'featured',
+                    )
+                );
+            }
+            
+            $query = new WP_Query($query_args);
+            
+
+            if (!$query->have_posts())
+            return null;
+
+            $product_array = array();
+            
+            while($query->have_posts()) {
+                $query->the_post();
+                $product_array["results"][] = sk_get_simple_product_array(get_the_ID(), isset($data['user_id']) ? $data['user_id'] : null);
+                }
+    
+            // add pagination
+            $product_array['paged'] = $paged;
+            $product_array['pagination'] = sk_numeric_pagination($query, $data);
+            wp_reset_query();
+            return $product_array;
+        }
+    ));
     //single product page
     register_rest_route( SKYE_API_NAMESPACE_V1, '/product/(?P<id>\d+)', array(
         'methods' => 'GET',
@@ -241,12 +472,14 @@ add_action( 'rest_api_init', function() {
             $product_id = $data['id'];
             $related_product_per_page = isset($data['related_product_per_page']) ? $data['related_product_per_page'] : 10;
 
+
+
             $info_array = sk_get_product_array($product_id);
 
             $info_array['related_products'] = array();
             $related_ids  = wc_get_related_products($product_id, $related_product_per_page);
             foreach($related_ids as $id) {
-                $info_array['related_products'][] = sk_get_product_array($id);
+                $info_array['related_products'][] = sk_get_product_array($id, isset($data['user_id']) ? $data['user_id'] : null);
             }
                 
 
@@ -268,7 +501,7 @@ add_action( 'rest_api_init', function() {
                 if (!sk_user_exists($user_id)) {
                     //if user id exists in cart if not registered user
                     if (!sk_user_cart_exists($user_id)) 
-                        return array('user-cart-not-exists');
+                        return array('user_cart_not_exists' => true);
                 }
             } else {
                 $user_id = sk_generate_new_user_hash_id();
@@ -296,6 +529,18 @@ add_action( 'rest_api_init', function() {
         }
     ));
 
+    //add cart coupon
+    register_rest_route( SKYE_API_NAMESPACE_V1, '/update-cart-coupon/(?P<user>.*?)/(?P<coupon>.*?)', array(
+        'methods' => 'POST',
+        'callback' => function($data) {
+ 
+            $user_id = $data['user'];
+            sk_update_cart_coupon($user_id, $data['coupon']);
+
+            return json_decode(sk_get_cart_value($user_id), true);
+        }
+    ));
+
     //cart info page
     register_rest_route( SKYE_API_NAMESPACE_V1, '/cart/(?P<user>.*?)', array(
         'methods' => 'GET',
@@ -306,90 +551,15 @@ add_action( 'rest_api_init', function() {
 
             $return_array = array();
 
-            $return_array = json_decode(sk_get_cart_value($user_id, true));
-
-            //CART INFORMATION TO COPY
-            // // cat conditional if
-            // $return_array['is_empty'] = WC()->cart->is_empty();
-            // $return_array['needs_payment'] = WC()->cart->needs_payment();
-            // $return_array['show_shipping'] = WC()->cart->show_shipping();
-            // $return_array['needs_shipping'] = WC()->cart->needs_shipping();
-            // $return_array['display_prices_including_tax'] = WC()->cart->display_prices_including_tax();
-
-            // // Get cart totals
-            // $return_array['contents_count'] = WC()->cart->get_cart_contents_count();
-            // $return_array['cart_subtotal'] = WC()->cart->get_cart_subtotal();
-            // $return_array['subtotal_ex_tax'] = WC()->cart->subtotal_ex_tax;
-            // $return_array['subtotal'] = WC()->cart->subtotal;
-            // $return_array['displayed_subtotal'] = WC()->cart->get_displayed_subtotal();
-            // $return_array['taxes_total'] = WC()->cart->get_taxes_total();
-            // $return_array['shipping_total'] = WC()->cart->get_shipping_total();
-            // $return_array['coupons'] = WC()->cart->get_coupons();
-            // // $return_array['coupon_discount_amount'] = WC()->cart->get_coupon_discount_amount( 'coupon_code' );
-            // $return_array['fees'] = WC()->cart->get_fees();
-            // $return_array['discount_total'] = WC()->cart->get_discount_total();
-            // $return_array['total'] = WC()->cart->get_total();
-            // $return_array['total'] = WC()->cart->total;
-            // $return_array['tax_totals'] = WC()->cart->get_tax_totals();
-            // $return_array['cart_contents_tax'] = WC()->cart->get_cart_contents_tax();
-            // $return_array['fee_tax'] = WC()->cart->get_fee_tax();
-            // $return_array['discount_tax'] = WC()->cart->get_discount_tax();
-            // $return_array['shipping_total'] = WC()->cart->get_shipping_total();
-            // $return_array['shipping_taxes'] = WC()->cart->get_shipping_taxes();
-
-            // // Loop over $cart items
-            // $return_array['items'] = array();
-            // foreach ( WC()->cart->get_cart() as $cart_item_key => $cart_item ) {
-            //     $product = $cart_item['data'];
-            //     $return_array['items'][] = array(
-            //         'ID' => $cart_item['product_id'],
-            //         'quantity' => $cart_item['quantity'],
-            //         'price' => WC()->cart->get_product_price( $product ),
-            //         'subtotal' => WC()->cart->get_product_subtotal( $product, $cart_item['quantity'] ),
-            //         'link' => $product->get_permalink( $cart_item ),
-            //         'attributes' =>  $product->get_attributes(),
-            //         // 'whatever_attribute' => $product->get_attribute( 'whatever' ),
-            //         // 'whatever_attribute_tax' => $product->get_attribute( 'pa_whatever' ),
-            //         // 'any_attribute' => $cart_item['variation']['attribute_whatever'],
-            //         'meta' => wc_get_formatted_cart_item_data( $cart_item ),
-            //         // more single product info
-            //         // 'product_info' => sk_get_product_array($cart_item['product_id']),
-
-            //     );
-            //  }
-
-            //  // Get $cart customer billing / shipping
-            // $return_array['billing_first_name'] = WC()->cart->get_customer()->get_billing_first_name();
-            // $return_array['billing_last_name'] = WC()->cart->get_customer()->get_billing_last_name();
-            // $return_array['billing_company'] = WC()->cart->get_customer()->get_billing_company();
-            // $return_array['billing_email'] = WC()->cart->get_customer()->get_billing_email();
-            // $return_array['billing_phone'] = WC()->cart->get_customer()->get_billing_phone();
-            // $return_array['billing_country'] = WC()->cart->get_customer()->get_billing_country();
-            // $return_array['billing_state'] = WC()->cart->get_customer()->get_billing_state();
-            // $return_array['billing_postcode'] = WC()->cart->get_customer()->get_billing_postcode();
-            // $return_array['billing_city'] = WC()->cart->get_customer()->get_billing_city();
-            // $return_array['billing_address'] = WC()->cart->get_customer()->get_billing_address();
-            // $return_array['billing_address_2'] = WC()->cart->get_customer()->get_billing_address_2();
-            // $return_array['shipping_first_name'] = WC()->cart->get_customer()->get_shipping_first_name();
-            // $return_array['shipping_last_name'] = WC()->cart->get_customer()->get_shipping_last_name();
-            // $return_array['shipping_company'] = WC()->cart->get_customer()->get_shipping_company();
-            // $return_array['shipping_country'] = WC()->cart->get_customer()->get_shipping_country();
-            // $return_array['shipping_state'] = WC()->cart->get_customer()->get_shipping_state();
-            // $return_array['shipping_postcode'] = WC()->cart->get_customer()->get_shipping_postcode();
-            // $return_array['shipping_city'] = WC()->cart->get_customer()->get_shipping_city();
-            // $return_array['shipping_address'] = WC()->cart->get_customer()->get_shipping_address();
-            // $return_array['shipping_address_2'] = WC()->cart->get_customer()->get_shipping_address_2();
-
-            // // Other stuff
-            // $return_array['cross_sells'] = WC()->cart->get_cross_sells();
-            // $return_array['cart_item_tax_classes_for_shipping'] = WC()->cart->get_cart_item_tax_classes_for_shipping();
-            // $return_array['cart_hash'] = WC()->cart->get_cart_hash();
-            // $return_array['customer'] = WC()->cart->get_customer();
+            $return_array = json_decode(sk_get_cart_value($user_id), true);
+            // $coupon = new WC_Coupon("44gb97sb");
+            // return $coupon->get_discount_type();
+            // return $coupon->get_amount();
+            
             
             return $return_array;
         }
     ));
-
     //create order page
     register_rest_route( SKYE_API_NAMESPACE_V1, '/create-order/(?P<user>.*?)', array(
         'methods' => 'POST',
@@ -398,6 +568,8 @@ add_action( 'rest_api_init', function() {
             $allow_guest = (isset($data['allow_guest']));
             $status = (isset($data['status'])) ? sanitize_text_field($data['status']) : 'wc-pending';
             $order_note = (isset($data['order_note'])) ? sanitize_text_field($data['order_note']) : 'Ordered from API';
+            $payment_method = (isset($data['payment_method'])) ? $data['payment_method'] : null;
+        
             $return_array = array();
             //to add address to url: url?billing_address%Bfirst_name%5D=SEUN&billing_address%5Blast_name%5D=OYENIYI....
             //%5B is to select variable array with they key eg: address%5Bfirst_name
@@ -431,18 +603,56 @@ add_action( 'rest_api_init', function() {
             foreach($cart['items'] as $item) {
                 $order->add_product(get_product($item['ID']), $item['quantity']);
             }
+            //add coupon if any
+            if ($cart['has_coupon']) {
+                $order->apply_coupon($cart['coupon']);
+            }
+            
             //set address
-            if (!is_null($billing_address))
-                $order->set_address($billing_address, 'billing');
+            $customer = new WC_Customer( $user_id );
+                $address = array(
+                    'first_name' => $customer->get_first_name(),
+                    'last_name'  => $customer->get_last_name(),
+                    'company'    => $customer->get_shipping_company(),
+                    'email'      => $customer->get_billing_email(),
+                    'phone'      => $customer->get_billing_phone(),
+                    'address_1'  => $customer->get_shipping_address_1(),
+                    'address_2'  => $customer->get_shipping_address_2(), 
+                    'city'       => $customer->get_shipping_city(),
+                    'state'      => $customer->get_shipping_state(),
+                    'postcode'   => $customer->get_shipping_postcode(),
+                    'country'    => $customer->get_shipping_country()
+                );
 
-            if (!is_null($shipping_address))
+            if (!is_null($billing_address)) {
+                $order->set_address($billing_address, 'billing');
+            } else { //use profiel shipping address
+                $order->set_address( $address, 'billing' );
+            }
+
+            if (!is_null($shipping_address)) {
                 $order->set_address($shipping_address, 'shipping');
+            } else { //use the profile shipping address
+                $order->set_address( $address, 'shipping' );
+
+            }
 
             // set payment gateways
-            //  and update payment - later fix
-            //NO NEED AGAIN
-            //payment status confirmed and set with the developing app, android, ios, or web app.
-            //
+            $payment_gateways = WC()->payment_gateways->payment_gateways();
+            if (!is_null($payment_method)) $order->set_payment_method($payment_gateways[$payment_method]);
+            
+            //set shipping cost
+            $item = new WC_Order_Item_Shipping();
+            $method_title = "Flat rate"; //default
+            if ($cart['shipping_method'] == "local_pickup") $method_title = "Local pickup";
+            if ($cart['shipping_method'] == "free_shipping") $method_title = "Free Shipping";
+            if ($cart['shipping_method'] == "by_printful") $method_title = "Printful Shipping";
+            $item->set_method_title($method_title);
+            // $item->set_method_id( "amazon_flat_rate:17" );
+            $item->set_total( $cart['shipping_cost'] );
+            $order->add_item( $item );
+
+            
             $order->calculate_totals();
             //PAYMENT STATUS
             //wc-processing - for payed but order not completed
@@ -452,8 +662,11 @@ add_action( 'rest_api_init', function() {
             //wc-cancelled - for order cancelled
             //wc-refunded - for order to refund
             //wc-failed - for failed order
-            $order->update_status($status, "Ordered from API", true);
+            $order->update_status($status, $order_note, true);
             $order->save();
+
+            //clear cart if set
+            if (isset($data['clear_cart'])) sk_delete_user_cart($user_id);
 
             $return_array['order_created'] = true;
             $return_array['info'] = sk_order_info($order->get_id());
@@ -467,7 +680,7 @@ add_action( 'rest_api_init', function() {
         'methods' => 'GET',
         'callback' => function($data) {
             $user_id = $data['user'];
-            $status = (isset($data['status'])) ? $data['status'] : array('wc-processing', 'wc-on-hold', 'wc-completed');
+            $status = (isset($data['status'])) ? $data['status'] : array('wc-processing', 'wc-on-hold', 'wc-completed', 'wc-pending');
             $date_completed = (isset($data['date_completed'])) ? $data['date_completed'] : null; //value eg: 2018-10-01...2018-10-10
             $paged = isset($data['paged']) ? $data['paged'] : 1;
             $post_per_page = isset($data['per_page']) ? $data['per_page'] : 20;
@@ -509,7 +722,7 @@ add_action( 'rest_api_init', function() {
             $order_id = $data['id'];
             $user_id = $data['user_id'];
             $order = sk_order_info($order_id);
-            if ($order['customer_id'] == $user_id || $order['user_id'] == $user_id) {
+            if ((isset($order['customer_id'])) ? ($order['customer_id'] == $user_id || $order['user_id'] == $user_id) : false) {
                 return $order;
             } else {
                 return array(
@@ -605,6 +818,8 @@ add_action( 'rest_api_init', function() {
             $with_sub = (isset($data['with_sub'])) ? true : false; //true for listing sub cateogries with parent output list and false for removing sub categories from parent output list
             $hide_empty = (isset($data['hide_empty'])) ? 1 : 0;
             $order_by = (isset($data['order_by'])) ? $data['order_by'] : null;
+            $with_uncategory = (isset($data['with_uncategory'])) ? true : false;
+
 
             $array_return = array();
 
@@ -618,11 +833,16 @@ add_action( 'rest_api_init', function() {
                 'hide_empty' => $hide_empty,
             ) );
             
-            foreach($categories as $category) {
+            foreach($categories as  $category) {
+            if (!$with_uncategory) {
+                if ($category->slug == 'uncategorized')
+                    continue;
+            }
                 if ($with_sub) { //will join sub categories to the parent list
                     $cat_arr = array(
                         'ID' => $category->term_id,
                         'name' => $category->name,
+                        'slug' => $category->slug,
                         'link' => get_term_link($category->slug, 'product_cat'),
                         'count' => $category->count
                     );
@@ -643,6 +863,7 @@ add_action( 'rest_api_init', function() {
                             $cat_arr['sub_cats'][] = array(
                                 'ID' => $cat->term_id,
                                 'name' => $cat->name,
+                                'slug' => $cat->slug,
                                 'link' => get_term_link($cat->slug, 'product_cat'),
                                 'count' => $cat->count
                             );
@@ -654,6 +875,7 @@ add_action( 'rest_api_init', function() {
                         $cat_arr = array(
                             'ID' => $category->term_id,
                             'name' => $category->name,
+                            'slug' => $category->slug,
                             'link' => get_term_link($category->slug, 'product_cat'),
                             'count' => $category->count
                             
@@ -675,6 +897,7 @@ add_action( 'rest_api_init', function() {
                                 $cat_arr['sub_cats'][] = array(
                                     'ID' => $cat->term_id,
                                     'name' => $cat->name,
+                                    'slug' => $cat->slug,
                                     'link' => get_term_link($cat->slug, 'product_cat'),
                                     'count' => $cat->count
                                 );
@@ -721,5 +944,224 @@ add_action( 'rest_api_init', function() {
 
         }
     ));
+    //get variation from attributes;
+        register_rest_route( SKYE_API_NAMESPACE_V1, '/product-variation/(?P<product_id>\d+)', array(
+            'methods' => 'GET',
+            'callback' => function($data) {
+                function treat($s) {
+                    $s = strtolower($s);
+                    return sanitize_title($s);
+                }
+                $product_id = $data['product_id'];
+                $attribute_params = $data->get_query_params();
+                $attribute_params = array_change_key_case($attribute_params, CASE_LOWER); //to be able to match
+                $attribute_params = array_map('treat', $attribute_params); //to be able to match or compare to variation attribute
+                // return $attribute_params;
+                function variation_attribues_to_simple_array($attributes) {
+                    $array_to_return = array();
+                    foreach($attributes as $key => $attr) {
+                        foreach($attr as $attr_key => $attr_value) {
+                            $array_to_return[$attr_key] = $attr_value;
+                        }
+                    }
+                    return $array_to_return;
+                }
+                $variations = sk_get_product_variations($product_id);
+                // return $variations;
+                // return $attribute_params;
+                foreach($variations as $variation) {
+                    $variation_attributes = $variation['attributes'];
+                    $variation_attributes = variation_attribues_to_simple_array($variation_attributes);
+                    $variation_attributes = array_change_key_case($variation_attributes, CASE_LOWER);
+                    $variation_attributes = array_map('treat', $variation_attributes); 
+                    if ($variation_attributes == $attribute_params) return $variation;
+
+                }
+
+                return null;
+            }
+        ));
+
+    //COPY CODE AFTER THIS FOR GIVEPHUCK UPDATE
+    register_rest_route( SKYE_API_NAMESPACE_V1, '/regions', array(
+            'methods' => 'GET',
+            'callback' => function($data) {  
+                return sk_get_regions();
+            }
+    ));
+    register_rest_route( SKYE_API_NAMESPACE_V1, '/test', array(
+            'methods' => 'GET',
+            'callback' => function($data) {
+                
+
+                
+                $array = array();
+                $delivery_zones = WC_Shipping_Zones::get_zones();
+                foreach($delivery_zones as $zone) {
+                    $newarr = array();
+                    $newarr['ID'] = $zone['id'];
+                    $newarr['zone_name'] = $zone['zone_name'];
+                    $newarr['zone_locations'] = array();
+                    foreach($zone['zone_locations'] as $location) {
+                        $newarr['zone_locations'][] = array(
+                            'code' => $location->code,
+                            'type' => $location->type
+                        );
+                    }
+                    $newarr['formatted_zone_location'] = $zone['formatted_zone_location'];
+                    $newarr['shipping_methods'] = array();
+                    foreach($zone['shipping_methods'] as $method) {
+                        $newarr['shipping_methods'][] = array(
+                            'id' => $method->id,
+                            'title' => $method->method_title,
+                            'cost' => $method->cost,
+                        );
+                    }
+                    $array[] = $newarr;
+                }
+                    
+                return $array;
+            }
+    ));
+    register_rest_route( SKYE_API_NAMESPACE_V1, '/change-cart-shipping-method/(?P<user_id>.*?)/(?P<shipping_method>.*?)', array(
+            'methods' => 'POST',
+            'callback' => function($data) {
+                $array = array();
+                $user_id = $data['user_id'];
+                $method = $data['shipping_method'];
+                sk_change_cart_shipping_method($user_id, $method);
+                
+                return json_decode(sk_get_cart_value($user_id), true);
+            }
+    ));
+    register_rest_route( SKYE_API_NAMESPACE_V1, '/banners', array(
+        'methods' => 'GET',
+        'callback' => function($data) {
+            $count = 0;
+            $arrays = array(
+                'enabled' => (get_option('sk_app_enable_banner_slides', 0)) ? true : false,
+                'empty' => true,
+                'count' => $count,
+                'results' => null
+            );
+            if (get_option( "sk_app_banner_1_image", 0)) {
+                $count++;
+                $image_id = get_option( "sk_app_banner_1_image", 0);
+                $arrays['results'][] = array(
+                    'image' => wp_get_attachment_image_src( $image_id, null)[0],
+                    'click_to' => get_option( "sk_app_banner_1_click_to", null),
+                    'category' => get_option( "sk_app_banner_1_category", null),
+                    'url' => get_option( "sk_app_banner_1_url", null),
+                );
+            }
+            if (get_option( "sk_app_banner_2_image", 0)) {
+                $count++;
+                $image_id = get_option( "sk_app_banner_2_image", 0);
+                $arrays['results'][] = array(
+                    'image' => wp_get_attachment_image_src( $image_id, null)[0],
+                    'click_to' => get_option( "sk_app_banner_2_click_to", null),
+                    'category' => get_option( "sk_app_banner_2_category", null),
+                    'url' => get_option( "sk_app_banner_2_url", null),
+                );
+            }
+            if (get_option( "sk_app_banner_3_image", 0)) {
+                $count++;
+                $image_id = get_option( "sk_app_banner_3_image", 0);
+                $arrays['results'][] = array(
+                    'image' => wp_get_attachment_image_src( $image_id, null)[0],
+                    'click_to' => get_option( "sk_app_banner_3_click_to", null),
+                    'category' => get_option( "sk_app_banner_3_category", null),
+                    'url' => get_option( "sk_app_banner_3_url", null),
+                );
+            }
+            if (get_option( "sk_app_banner_4_image", 0)) {
+                $count++;
+                $image_id = get_option( "sk_app_banner_4_image", 0);
+                $arrays['results'][] = array(
+                    'image' => wp_get_attachment_image_src( $image_id, null)[0],
+                    'click_to' => get_option( "sk_app_banner_4_click_to", null),
+                    'category' => get_option( "sk_app_banner_4_category", null),
+                    'url' => get_option( "sk_app_banner_4_url", null),
+                );
+            }
+            if (get_option( "sk_app_banner_5_image", 0)) {
+                $count++;
+                $image_id = get_option( "sk_app_banner_5_image", 0);
+                $arrays['results'][] = array(
+                    'image' => wp_get_attachment_image_src( $image_id, null)[0],
+                    'click_to' => get_option( "sk_app_banner_5_click_to", null),
+                    'category' => get_option( "sk_app_banner_5_category", null),
+                    'url' => get_option( "sk_app_banner_5_url", null),
+                );
+            }
+            //update count and empty
+            $arrays['count'] = $count;
+            $arrays['empty'] = ($count > 0);
+            return $arrays;
+        }
+    ));
+    register_rest_route( SKYE_API_NAMESPACE_V1, '/wishlists/(?P<user_id>.*?)', array(
+        'methods' => 'GET',
+        'callback' => function($data) {
+            $user_id =  $data['user_id'];
+            return sk_wishlist_products($user_id, $data);
+        }
+    ));
+    register_rest_route( SKYE_API_NAMESPACE_V1, '/add-to-wishlist/(?P<user_id>.*?)/(?P<product_id>.*?)', array(
+        'methods' => 'POST',
+        'callback' => function($data) {
+            $user_id =  $data['user_id'];
+            $product_id = $data['product_id'];
+            
+            sk_update_wishlist($user_id, $product_id);
+            
+            //GET WISH LIST PRODUCTS
+            return sk_wishlist_products($user_id, $data);
+        }
+    ));
+    register_rest_route( SKYE_API_NAMESPACE_V1, '/remove-from-wishlist/(?P<user_id>.*?)/(?P<product_id>.*?)', array(
+        'methods' => 'POST',
+        'callback' => function($data) {
+            $user_id =  $data['user_id'];
+            $product_id = $data['product_id'];
+            
+            sk_remove_from_wishlist($user_id, $product_id);
+            
+            //GET WISH LIST PRODUCTS
+            return sk_wishlist_products($user_id, $data);
+        }
+    ));
+
+    //FOR GIVEPHUCK ONLY
+    register_rest_route( SKYE_API_NAMESPACE_V1, '/update-wallet-address/(?P<user_id>.*?)/(?P<address>.*?)', array(
+        'methods' => 'POST',
+        'callback' => function($data) {
+            $address = $data['address'];
+            $user_id = $data['user_id'];
+            $update = update_user_meta( $user_id, 'tron_wallet', $address );
+            if ($update) {
+                //get address again
+                return array(
+                    'address' => get_the_author_meta( 'tron_wallet', $user_id )
+                );
+            } else {
+                return array(
+                    'code' => "error_occured",
+                    'message' => "Unable to save address",
+                    'data' => null
+                );
+            }
+        }
+    ));
+    register_rest_route( SKYE_API_NAMESPACE_V1, '/wallet-address/(?P<user_id>.*?)', array(
+        'methods' => 'GET',
+        'callback' => function($data) {  
+            $user_id = $data['user_id'];
+            return array(
+                'address' => get_the_author_meta( 'tron_wallet', $user_id )
+            );
+        }
+    ));
+
     
 });

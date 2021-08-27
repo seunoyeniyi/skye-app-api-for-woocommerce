@@ -17,7 +17,7 @@ if (!function_exists('sk_cart_subtotal')) {
     }
 }
 if (!function_exists('sk_get_product_array')) {
-    function sk_get_product_array($product_id) {
+    function sk_get_product_array($product_id, $user_id = null) {
     $product = wc_get_product($product_id);
 
     //categories
@@ -32,6 +32,55 @@ if (!function_exists('sk_get_product_array')) {
     foreach($tags_ids as $tag_id) {
         $tags[] = get_term_by('id', $tag_id, 'product_tag');
     }
+    
+    //setup attributes
+    $attributes = $product->get_attributes();
+    // die(print_r($data['kdl'] = $product->get_attribute("pa_size")));
+    $return_attributes = array();
+    if ($product->is_type('variation')) {
+        $return_attributes['terms'] = $attributes;
+        $return_attributes['selected'] = array();
+        foreach($attributes as $key => $value) {
+            $return_attributes['selected'][] = array(
+                'label' => wc_attribute_label($key),
+                'selected' => $product->get_attribute($key),
+            );
+        }
+
+    } else {
+    foreach ($attributes as $attr => $attribute) {
+        $data = $attribute->get_data();
+        $data['label'] = wc_attribute_label($data['name']);
+        $options = $attribute->get_options();
+        // $data['print_echo'] = $attribute->get_terms();
+        $data['options'] = array(); //clear default array;
+        if ($attribute->is_taxonomy()) {
+            foreach((array)$attribute->get_terms() as $term) {
+                $data['options'][] = array(
+                    'name' => $term->slug,
+                    'value' => $term->name,
+                );
+            }
+        } else {
+            foreach($options as $opt) {
+                $data['options'][] = array(
+                    'name' => $opt,
+                    'value' => $opt,
+                );
+            }
+        }
+        $return_attributes[] = $data;
+    }
+    }
+    //setup default attributes
+    $return_default_attributes = array();
+    $default_attributes = $product->get_default_attributes();
+    foreach ($default_attributes as $attr => $attribute) {
+        $data = $attribute->get_data();
+        $data['label'] = wc_attribute_label($data['name']);
+        $return_default_attributes[] = $data;
+    }
+
 
     return array(
         // General Info
@@ -40,6 +89,7 @@ if (!function_exists('sk_get_product_array')) {
         'type' => $product->get_type(),
         'name' => $product->get_name(),
         'slug' => $product->get_slug(),
+        'in_wishlist' => sk_in_wishlist($user_id, $product->get_id()),
         'date_created' => $product->get_date_created(),
         'date_modified' => $product->get_date_modified(),
         'status' => $product->get_status(),
@@ -73,9 +123,13 @@ if (!function_exists('sk_get_product_array')) {
 
         // Product Variations and Attributes
         'children' => $product->get_children(),
-        'attributes' => $product->get_attributes(),
-        'default_attributes' => $product->get_default_attributes(),
+        'product_type' => $product->get_type(),
+        'attributes' => $return_attributes,
+        'default_attributes' => $return_default_attributes,
         //'attribute' => $product->get_attribute('attributeid'), //get specific attribute value
+
+        //Product available variations
+        'variations' => sk_get_product_variations($product->get_id()),
 
         // Product Taxonomies
         // 'categories' => $product->get_categories(), //return categires html links
@@ -101,6 +155,150 @@ if (!function_exists('sk_get_product_array')) {
         'rating_counts' => $product->get_rating_counts(),
         'average_rating' => $product->get_average_rating(),
         'review_count' => $product->get_review_count()
+
+    );
+    }
+}
+if (!function_exists('sk_get_simple_product_array')) {
+    function sk_get_simple_product_array($product_id, $user_id = null) {
+    $product = wc_get_product($product_id);
+
+    //categories
+    $categories_ids = $product->get_category_ids();
+    $categories = array();
+    foreach($categories_ids as $cat_id) {
+        $cat_term = get_term_by('id', $cat_id, 'product_cat');
+        $categories[] = array('name' => $cat_term->name, 'slug' => $cat_term->slug);
+    }
+    // //tags
+    // $tags_ids = $product->get_tag_ids();
+    // $tags = array();
+    // foreach($tags_ids as $tag_id) {
+    //     $tags[] = get_term_by('id', $tag_id, 'product_tag');
+    // }
+    
+    // //setup attributes
+    // $attributes = $product->get_attributes();
+    // // die(print_r($data['kdl'] = $product->get_attribute("pa_size")));
+    // $return_attributes = array();
+    // if ($product->is_type('variation')) {
+    //     $return_attributes['terms'] = $attributes;
+    //     $return_attributes['selected'] = array();
+    //     foreach($attributes as $key => $value) {
+    //         $return_attributes['selected'][] = array(
+    //             'label' => wc_attribute_label($key),
+    //             'selected' => $product->get_attribute($key),
+    //         );
+    //     }
+
+    // } else {
+    // foreach ($attributes as $attr => $attribute) {
+    //     $data = $attribute->get_data();
+    //     $data['label'] = wc_attribute_label($data['name']);
+    //     $options = $attribute->get_options();
+    //     // $data['print_echo'] = $attribute->get_terms();
+    //     $data['options'] = array(); //clear default array;
+    //     if ($attribute->is_taxonomy()) {
+    //         foreach((array)$attribute->get_terms() as $term) {
+    //             $data['options'][] = array(
+    //                 'name' => $term->slug,
+    //                 'value' => $term->name,
+    //             );
+    //         }
+    //     } else {
+    //         foreach($options as $opt) {
+    //             $data['options'][] = array(
+    //                 'name' => $opt,
+    //                 'value' => $opt,
+    //             );
+    //         }
+    //     }
+    //     $return_attributes[] = $data;
+    // }
+    // }
+    // //setup default attributes
+    // $return_default_attributes = array();
+    // $default_attributes = $product->get_default_attributes();
+    // foreach ($default_attributes as $attr => $attribute) {
+    //     $data = $attribute->get_data();
+    //     $data['label'] = wc_attribute_label($data['name']);
+    //     $return_default_attributes[] = $data;
+    // }
+
+
+    return array(
+        // General Info
+        'ID' => $product->get_id(),
+        // 'title' => $product->get_title(),
+        'type' => $product->get_type(),
+        'name' => $product->get_name(),
+        // 'slug' => $product->get_slug(),
+        // 'date_created' => $product->get_date_created(),
+        // 'date_modified' => $product->get_date_modified(),
+        'status' => $product->get_status(),
+        // 'featured' => $product->get_featured(),
+        // 'catalog_visibility' => $product->get_catalog_visibility(),
+        'description' => $product->get_description(),
+        // 'sku' => $product->get_sku(),
+        // 'menu_order' => $product->get_menu_order(),
+        // 'virtual' => $product->get_virtual(),
+        // 'permalink' => get_permalink($product->get_id()),
+
+        // Product prices
+        'price' => $product->get_price(),
+        'regular_price' => $product->get_regular_price(),
+        // 'sale_price' => $product->get_sale_price(),
+        // 'date_on_sale_from' => $product->get_date_on_sale_from(),
+        // 'date_on_sale_to' => $product->get_date_on_sale_to(),
+        // 'total_sales' => $product->get_total_sales(),
+
+        // Product Dimensions
+        // 'weight' => $product->get_weight(),
+        // 'length' => $product->get_length(),
+        // 'width' => $product->get_width(),
+        // 'height' => $product->get_height(),
+        // 'dimensions' => $product->get_dimensions(),
+
+        // Linked Products
+        // 'upsell_ids' => $product->get_upsell_ids(),
+        // 'cross_sell_ids' => $product->get_cross_sell_ids(),
+        // 'parent_id' => $product->get_parent_id(),
+
+        // Product Variations and Attributes
+        // 'children' => $product->get_children(),
+        'product_type' => $product->get_type(),
+        'in_wishlist' => sk_in_wishlist($user_id, $product->get_id()),
+        // 'attributes' => $return_attributes,
+        // 'default_attributes' => $return_default_attributes,
+        //'attribute' => $product->get_attribute('attributeid'), //get specific attribute value
+
+        //Product available variations
+        // 'variations' => sk_get_product_variations($product->get_id()),
+
+        // Product Taxonomies
+        // 'categories' => $product->get_categories(), //return categires html links
+        'categories' => $categories,
+        // 'category_ids' => $product->get_category_ids(),
+        // 'tags' => $tags,
+        // 'tag_ids' => $product->get_tag_ids(),
+
+        // Product Downloads
+        // 'downloads' => $product->get_downloads(),
+        // 'download_expiry' => $product->get_download_expiry(),
+        // 'downloadable' => $product->get_downloadable(),
+        // 'download_limit' => $product->get_download_limit(),
+
+        // Product Images
+        // 'image_id' => $product->get_image_id(),
+        'image' => wp_get_attachment_url($product->get_image_id()),
+        // 'image2' => $product->get_image(), //return html image
+        // 'gallery_image_ids' => $product->get_gallery_image_ids(),
+
+        //Product Reviews
+        // 'reviews_allowed' => $product->get_reviews_allowed(),
+        // 'rating_counts' => $product->get_rating_counts(),
+        // 'average_rating' => $product->get_average_rating(),
+        // 'review_count' => $product->get_review_count()
 
     );
     }
@@ -146,6 +344,77 @@ if (!function_exists('sk_update_cart_value')) {
     ));
     }
 }
+if (!function_exists('sk_change_cart_user_id')) {
+    function sk_change_cart_user_id($cart_user_id, $new_user_id) {
+    global $wpdb;
+    $cart_table = $wpdb->prefix . "skye_carts";
+    //update
+    $current_date = date("Y-m-d H:i:s");
+    $expiry_datetime = date("Y-m-d H:i:s", strtotime($current_date . ' + 14 days'));
+    //delete new user cart if already exists
+    $wpdb->delete($cart_table, array('user' => $new_user_id));
+    //get the cart user json to update the id in the json
+    $user_cart_json = json_decode(sk_get_cart_value($cart_user_id), true);
+    $user_cart_json['user'] = $new_user_id;
+    
+    return $wpdb->update($cart_table, array(
+        'user' => $new_user_id,
+        'cart_value' => json_encode($user_cart_json),
+        'session_expiry' => $expiry_datetime, //renew the expiry as cart updated
+    ), array(
+        'user' => $cart_user_id
+    ));
+    }
+}
+if (!function_exists('sk_update_cart_coupon')) {
+    function sk_update_cart_coupon($user_id, $coupon) {
+    global $wpdb;
+    $cart_table = $wpdb->prefix . "skye_carts";
+    //update
+
+    $cart_json = json_decode(sk_get_cart_value($user_id), true);
+    if (!isset($cart_json['shipping_cost'])) $cart_json['shipping_cost'] = 0; //to be able to calculate total in app
+    $shipping_cost = $cart_json['shipping_cost'];
+    $coup = new WC_Coupon($coupon);
+    if ($coup->is_valid()) {
+        $cart_json['coupon'] = $coupon;
+        $cart_json['coupon_type'] = $coup->get_discount_type();
+        $cart_json['coupon_amount'] = $coup->get_amount();
+        $cart_json['has_coupon'] = true;
+        //calculate coupon price for the cart
+        $subtotal = $cart_json['subtotal'];
+        $items_count = $cart_json['contents_count'];
+        if ($coup->get_discount_type() == "percent") { //calculate minus percentage of subtotal
+            $cart_json['coupon_discount'] = (($coup->get_amount() / 100) * $subtotal);
+        } elseif ($coup->get_discount_type() == "fixed_cart") { // minus amount from subtotal
+            $cart_json['coupon_discount'] = $coup->get_amount();
+        } elseif ($coup->get_discount_type() == "fixed_product") { // multiply amount by number of items in cart (and minus result from to subtotal)
+            $cart_json['coupon_discount'] = ($coup->get_amount() * $items_count);
+        }
+        //calculate total
+        $cart_json['total'] = ($subtotal + $shipping_cost) - $cart_json['coupon_discount'];
+    } else {
+        $cart_json['has_coupon'] = false;
+        $cart_json['coupon_discount'] = 0;
+    }
+
+    $cart_json['has_shipping'] = (isset($cart_json['has_shipping'])) ? $cart_json['has_shipping'] : false;
+    
+    return $wpdb->update($cart_table, array(
+        'cart_value' => json_encode($cart_json),
+    ), array(
+        'user' => $user_id
+    ));
+    }
+}
+if (!function_exists('sk_delete_user_cart')) {
+    function sk_delete_user_cart($user_id) {
+    global $wpdb;
+    $cart_table = $wpdb->prefix . "skye_carts";
+    
+    return $wpdb->delete($cart_table, array('user' => $user_id));
+    }
+}
 if (!function_exists('sk_insert_cart')) {
     function sk_insert_cart($user_id, $data) {
     global $wpdb;
@@ -178,12 +447,73 @@ if (!function_exists('sk_generate_new_user_hash_id')) {
         return md5(1);
     }
 }
+if (!function_exists("sk_get_product_variations")) {
+    function sk_get_product_variations($product_id) {
+        $product = wc_get_product($product_id);
+        $array_return = array();
+    if($product->is_type('variable')){
+        foreach($product->get_available_variations() as $variation ){
+            $attr_collections = array();
+            // Variation ID
+            $variation_id = $variation['variation_id'];
+            $attr_collections["ID"] = $variation_id;
+    
+            // Attributes
+            $attr_collections['attributes'] = array();
+            foreach( $variation['attributes'] as $key => $value ){
+                $taxonomy = str_replace('attribute_', '', $key );
+                $attr_collections['attributes'][] = array(
+                    "$taxonomy" => $value
+                );
+            }
+            // Price
+            $attr_collections['price'] = $variation['display_price'];
+            $array_return[] = $attr_collections;
+        }
+        return $array_return;
+    } else {
+        return null;
+    }
+    }
+}
+if (!function_exists("sk_get_variation_attributes")) {
+    function sk_get_variation_attributes($variation_id) {
+        $product = wc_get_product($variation_id);
+        if ($product->is_type('variation')) {
+            return $product->get_attributes();
+        } else {
+            return null;
+        }
+    }
+}
 if (!function_exists('sk_cart_json_handler')) {
     function sk_cart_json_handler($user_id, $data, $old_cart_json = null) { //return array
     $product_id = $data['product_id'];
     $quantity = (isset($data['quantity'])) ? $data['quantity'] : 1;
     $product = wc_get_product($product_id);
     $replace_qty = (isset($data['replace_quantity'])) ? true : false;
+
+
+    //setup attributes
+    $attributes = $product->get_attributes();
+    $return_attributes = array();
+    if ($product->is_type('variation')) {
+        if ($product->is_type('variation')) {
+            $return_attributes['terms'] = $attributes;
+            $return_attributes['selected'] = array();
+            foreach($attributes as $key => $value) {
+                $return_attributes['selected'][] = array(
+                    'label' => wc_attribute_label($key),
+                    'selected' => $product->get_attribute($key),
+                );
+            }
+    
+        }
+    } else {
+        foreach ($attributes as $attr => $attribute) {
+            $return_attributes[$attr] = $attribute->get_data();
+        }
+    }
     
     $return_array = array();
     if (is_null($old_cart_json)) { //create new array
@@ -195,9 +525,14 @@ if (!function_exists('sk_cart_json_handler')) {
 
             // // Get cart totals
             $return_array['contents_count'] = 1;
+            $return_array['has_coupon'] = false;
+            $return_array['has_shipping'] = false;
             // $return_array['cart_subtotal'] = WC()->cart->get_cart_subtotal();
             // $return_array['subtotal_ex_tax'] = WC()->cart->subtotal_ex_tax;
             $return_array['subtotal'] = $product->get_price() * $quantity;
+            $return_array['total'] = $product->get_price() * $quantity;
+            $return_array['coupon_discount'] = 0;
+            $return_array['shipping_cost'] = 0;
             // $return_array['displayed_subtotal'] = WC()->cart->get_displayed_subtotal();
             // $return_array['coupons'] = WC()->cart->get_coupons();
             // // $return_array['coupon_discount_amount'] = WC()->cart->get_coupon_discount_amount( 'coupon_code' );
@@ -213,7 +548,11 @@ if (!function_exists('sk_cart_json_handler')) {
                     'quantity' => $quantity,
                     'price' => $product->get_price(),
                     'subtotal' => $product->get_price() * $quantity,
-                    'attributes' =>  $product->get_attributes(),
+                    'product_type' => $product->get_type(),
+                    'product_type' => $product->get_type(),
+                    'product_title' => $product->get_title(),
+                    'product_image' => wp_get_attachment_url($product->get_image_id()),
+                    'attributes' =>  $return_attributes,
                     // 'whatever_attribute' => $product->get_attribute( 'whatever' ),
                     // 'whatever_attribute_tax' => $product->get_attribute( 'pa_whatever' ),
                     // 'any_attribute' => $cart_item['variation']['attribute_whatever'],
@@ -244,6 +583,7 @@ if (!function_exists('sk_cart_json_handler')) {
         //updating items in cart
         //search product in the items
         $search = sk_search_item_in_array($product_id, $return_array['items']);
+
         if (!is_null($search)) { //update items
             if ($quantity > 0) { //update product in items
                 $return_array['items'][$search]['quantity'] = ($replace_qty) ? $quantity : ($return_array['items'][$search]['quantity'] + $quantity);
@@ -252,15 +592,24 @@ if (!function_exists('sk_cart_json_handler')) {
                 $return_array['items'][$search]['attributes'] =  $product->get_attributes();
             } else { //delete item since quantity is zero(0)
                 unset($return_array['items'][$search]);
+                $return_array['items'] = array_values($return_array['items']); //reset the indexes
             }
         } else { //add to items
+            if ($quantity > 0) {
             $return_array['items'][] = array(
                 'ID' => $product_id,
                 'quantity' => $quantity,
                 'price' => $product->get_price(),
                 'subtotal' => $product->get_price() * $quantity,
-                'attributes' =>  $product->get_attributes(),
+                'product_type' => $product->get_type(),
+                'product_title' => $product->get_title(),
+                'product_image' => wp_get_attachment_url($product->get_image_id()),
+                'attributes' =>  $return_attributes,
             );
+        } else {
+            unset($return_array['items'][$search]);
+            $return_array['items'] = array_values($return_array['items']); //reset the indexes
+        }
         }
 
 
@@ -268,6 +617,30 @@ if (!function_exists('sk_cart_json_handler')) {
         $return_array['is_empty'] = (count($return_array['items']) > 0) ? false : true;
         $return_array['contents_count'] = count($return_array['items']);
         $return_array['subtotal'] = sk_cart_subtotal($return_array['items']);
+        $return_array['shipping_cost'] = isset($return_array['shipping_cost']) ? $return_array['shipping_cost'] : 0;
+        $subtotal = $return_array['subtotal'];
+        $shipping_cost = $return_array['shipping_cost'];
+        if (isset($return_array['has_coupon'])) {
+            if ($return_array['has_coupon']) {
+                //calculate coupon price for the cart
+                $coup = new WC_Coupon($return_array['coupon']);
+                $items_count = $return_array['contents_count'];
+                if ($coup->get_discount_type() == "percent") { //calculate minus percentage of subtotal
+                    $return_array['coupon_discount'] = (($coup->get_amount() / 100) * $subtotal);
+                } elseif ($coup->get_discount_type() == "fixed_cart") { // minus amount from subtotal
+                    $return_array['coupon_discount'] = $coup->get_amount();
+                } elseif ($coup->get_discount_type() == "fixed_product") { // multiply amount by number of items in cart (and minus result from to subtotal)
+                    $return_array['coupon_discount'] = ($coup->get_amount() * $items_count);
+                }
+
+            }
+        }
+        $return_array['coupon_discount'] = (isset($return_array['coupon_discount'])) ? $return_array['coupon_discount'] :0;
+        //calculate total
+        $coupon_discount = $return_array['coupon_discount'];
+        $return_array['total'] = ($subtotal + $shipping_cost) - $coupon_discount;
+
+        $return_array['has_shipping'] = (isset($return_array['has_shipping'])) ? $return_array['has_shipping'] : false;
     }
 
     return $return_array;
@@ -398,13 +771,13 @@ if (!function_exists('sk_order_info')) {
         $return_array['transaction_id'] = $order->get_transaction_id();
 
         // Get Order URLs
-        // $return_array['checkout_payment_url'] = $order->get_checkout_payment_url();
-        // $return_array['checkout_order_received_url'] = $order->get_checkout_order_received_url();
-        // $return_array['cancel_order_url'] = $order->get_cancel_order_url();
-        // $return_array['cancel_endpoint'] = $order->get_cancel_order_url_raw();
-        // $return_array['cancel_endpoint'] = $order->get_cancel_endpoint();
-        // $return_array['view_order_url'] = $order->get_view_order_url();
-        // $return_array['edit_order_url'] = $order->get_edit_order_url();
+        $return_array['checkout_payment_url'] = $order->get_checkout_payment_url();
+        $return_array['checkout_order_received_url'] = $order->get_checkout_order_received_url();
+        $return_array['cancel_order_url'] = $order->get_cancel_order_url();
+        $return_array['cancel_endpoint'] = $order->get_cancel_order_url_raw();
+        $return_array['cancel_endpoint'] = $order->get_cancel_endpoint();
+        $return_array['view_order_url'] = $order->get_view_order_url();
+        $return_array['edit_order_url'] = $order->get_edit_order_url();
 
         // Get Order Status
         $return_array['status'] = $order->get_status();
@@ -478,3 +851,415 @@ if (!function_exists('sk_numeric_pagination')) {
     return $array_to_return;
     }
 }
+if (!function_exists("sk_find_variation_id")) {
+    function sk_find_variation_id($product_id, $attributes) {
+        return (new \WC_Product_Data_Store_CPT())->find_matching_product_variation(
+            new \WC_Product($product_id),
+            $attributes
+        );
+    }
+}
+if (!function_exists("sk_get_user_shipping_address")) {
+    function sk_get_user_shipping_address($user_id) {
+        $customer = new WC_Customer( $user_id );
+        $array = array();
+        
+        $array['username']     = $customer->get_username(); // Get username
+        $array['user_email']   = $customer->get_email(); // Get account email
+        $array['first_name']   = $customer->get_first_name();
+        $array['last_name']    = $customer->get_last_name();
+        $array['display_name'] = $customer->get_display_name();
+        // Customer shipping information details (from account)
+        $array['shipping_first_name'] = $customer->get_shipping_first_name();
+        $array['shipping_last_name']  = $customer->get_shipping_last_name();
+        $array['shipping_company']    = $customer->get_shipping_company();
+        $array['shipping_address_1']  = $customer->get_shipping_address_1();
+        $array['shipping_address_2']  = $customer->get_shipping_address_2();
+        $array['shipping_city']       = $customer->get_shipping_city();
+        $array['shipping_state']      = $customer->get_shipping_state();
+        $array['shipping_postcode']   = $customer->get_shipping_postcode();
+        $array['shipping_country']    = $customer->get_shipping_country();
+        $array['shipping_phone']    = $customer->get_billing_phone(); // since there is not method to get phone for shipping
+        $array['shipping_email']    = $customer->get_billing_email(); // since there is not method to get email for shipping
+
+
+        return $array;
+    }
+}
+if (!function_exists("sk_get_user_billing_address")) {
+    function sk_get_user_billing_address($user_id) {
+        $customer = new WC_Customer( $user_id );
+        $array = array();
+        
+        $array['username']     = $customer->get_username(); // Get username
+        $array['user_email']   = $customer->get_email(); // Get account email
+        $array['first_name']   = $customer->get_first_name();
+        $array['last_name']    = $customer->get_last_name();
+        $array['display_name'] = $customer->get_display_name();
+        // Customer billing information details (from account)
+        $array['billing_first_name'] = $customer->get_billing_first_name();
+        $array['billing_last_name']  = $customer->get_billing_last_name();
+        $array['billing_company']    = $customer->get_billing_company();
+        $array['billing_address_1']  = $customer->get_billing_address_1();
+        $array['billing_address_2']  = $customer->get_billing_address_2();
+        $array['billing_city']       = $customer->get_billing_city();
+        $array['billing_state']      = $customer->get_billing_state();
+        $array['billing_postcode']   = $customer->get_billing_postcode();
+        $array['billing_country']    = $customer->get_billing_country();
+        $array['billing_phone']    = $customer->get_billing_phone();
+        $array['billing_email']    = $customer->get_billing_email();
+
+        return $array;
+    }
+}
+if (!function_exists("sk_get_user_info")) {
+    function sk_get_user_info($user_id) {
+        $user = (array) get_userdata($user_id);
+        $user['shipping_address'] = sk_get_user_shipping_address($user_id);
+        $user['billing_address'] = sk_get_user_billing_address($user_id);
+        return $user;
+    }
+}
+if (!function_exists("sk_user_exist_by_login_type")) {
+    function sk_user_exist_by_login_type($login_type, $login_id) {
+        $users = get_users(array(
+            'meta_key' => 'sk_' . $login_type,
+            'meta_value' => $login_id,
+            'meta_compare' => '='
+        ));
+        if (count($users) > 0) {
+            return true;
+        } else {
+            return false;
+        }
+
+    }
+}
+if (!function_exists("sk_get_user_info_by_login_type")) {
+    function sk_get_user_info_by_login_type($login_type, $login_id) {
+        $users = get_users(array(
+            'meta_key' => 'sk_' . $login_type,
+            'meta_value' => $login_id,
+            'meta_compare' => '='
+        ));
+        if (count($users) > 0) {
+            //get first user - as the owner
+            $user_id = $users[0]->ID;
+            return sk_get_user_info($user_id);
+        } else {
+            return null;
+        }
+
+    }
+}
+
+//also coppy code below for givephuck
+if (!function_exists("sk_get_regions")) {
+    function sk_get_regions() {
+        $array = array();
+
+        $wc_countries = new WC_Countries();
+        $array['countries'] = $wc_countries->get_countries();
+        $array['states'] = $wc_countries->get_states();
+                
+        return $array;
+    }
+}
+if (!function_exists("sk_get_country_code")) {
+    function sk_get_country_code($country_name) {
+        $wc_countries = new WC_Countries();
+        $countries = $wc_countries->get_countries();
+        foreach($countries as $code => $name) {
+            if ($name == $country_name) return $code;
+        }
+        return "";
+    }
+}
+if (!function_exists("sk_get_state_code")) {
+    function sk_get_state_code($country_code, $state_name) {
+        $wc_countries = new WC_Countries();
+        $states = $wc_countries->get_states();
+        if (isset($states[$country_code])) {
+            $states_in_the_country = $states[$country_code];
+            foreach($states_in_the_country as $code => $name) {
+                if ($name == $state_name) return $code;
+            }
+        } else {
+            return "";
+        }
+    }
+}
+
+if (!function_exists("sk_update_cart_shipping")) {
+    function sk_update_cart_shipping($user_id, $country_code, $state_code, $postcode, $provider = "woocommerce", $shipping_provider_cost = 0) {
+        global $wpdb;
+        $cart_table = $wpdb->prefix . "skye_carts";
+        //update
+
+        $cart_json = json_decode(sk_get_cart_value($user_id), true);
+
+        if ($provider == "woocommerce") {
+        //get zone
+        $zone = WC_Shipping_Zones::get_zone_matching_package( array(
+            'destination' => array(
+                'country' => $country_code,
+                'state' => $state_code,
+                'postcode' => $postcode
+            )
+        ) );
+        $zone_id = $zone->get_id();
+        //get the shipping methods
+        $shipping_methods = $zone->get_shipping_methods(true, 'values');
+        $cart_json['shipping_methods'] = array();
+        foreach($shipping_methods as $method) {
+            //calculate each product shipping class cost
+            $classes_cost = 0;
+            $items = $cart_json['items'];
+            foreach ($items as $item) {
+                $item_product = wc_get_product($item['ID']);
+                $shipping_class_id = $item_product->get_shipping_class_id();
+                $instance = $method->instance_settings;
+
+                //skip if (type is not set or type != class)
+                if (!isset($method->type)) {
+                        continue;
+                } else {
+                    if ($method->type != "class")
+                        continue;
+                }
+                //end of skip
+
+                if ($shipping_class_id) {
+                    $unit_cost = $instance['class_cost_' . $shipping_class_id];
+                    $classes_cost += (is_numeric($unit_cost)) ? $unit_cost : 0;
+                } else {
+                    //no class cost
+                    $unit_cost = $instance['no_class_cost'];
+                    $classes_cost += (is_numeric($unit_cost)) ? $unit_cost : 0;
+                }
+            }
+            //add the shipping classes cost to the shipping cost
+            $cart_json['shipping_methods'][$method->id] = array(
+                'title' => $method->method_title,
+                'cost' => $method->cost + $classes_cost,
+            );
+        }
+        
+        $shipping_method = (isset($cart_json['shipping_methods']['flat_rate'])) ? 'flat_rate' : null; //default method else null
+        $cart_json['shipping_method'] = $shipping_method;
+        $cart_json['shipping_cost'] = (!is_null($shipping_method)) ? $cart_json['shipping_methods'][$shipping_method]['cost'] : 0;
+    } else {
+        $cart_json['shipping_method'] = "by_" . $provider;
+        $cart_json['shipping_methods'] = null;
+        $cart_json['shipping_cost'] = $shipping_provider_cost;
+    }
+
+
+        //calculate total
+        $subtotal = $cart_json['subtotal'];
+        $shipping_cost = $cart_json['shipping_cost'];
+        $coupon_discount = (isset($cart_json['coupon_discount'])) ? $cart_json['coupon_discount'] : 0;
+        $cart_json['total'] = ($subtotal + $shipping_cost) - $coupon_discount;
+
+        if ($shipping_cost > 0) {
+            $cart_json['has_shipping'] = true;
+        } else {
+            $cart_json['has_shipping'] = false;
+        }
+
+        
+        return $wpdb->update($cart_table, array(
+            'cart_value' => json_encode($cart_json),
+        ), array(
+            'user' => $user_id
+        ));
+    }
+}
+if (!function_exists("sk_update_cart_shipping_by_name")) {
+    function sk_update_cart_shipping_by_name($user_id, $country_name, $state_name, $postcode, $provider = "woocommerce", $shipping_provider_cost = 0) {
+        $country_code = sk_get_country_code($country_name);
+        $state_code = sk_get_state_code($country_code, $state_name);
+        return sk_update_cart_shipping($user_id, $country_code, $state_code, $postcode, $provider, $shipping_provider_cost);
+    }
+}
+if (!function_exists("sk_change_cart_shipping_method")) {
+    function sk_change_cart_shipping_method($user_id, $shipping_method) {
+        global $wpdb;
+        $cart_table = $wpdb->prefix . "skye_carts";
+        //update
+
+        $cart_json = json_decode(sk_get_cart_value($user_id), true);
+
+        $subtotal = $cart_json['subtotal'];
+        $coupon_discount = (isset($cart_json['coupon_discount'])) ? $cart_json['coupon_discount'] : 0;
+
+        //update shipping_method and cost
+        if (isset($cart_json['shipping_methods'])) {
+            $shipping_methods = $cart_json['shipping_methods'];
+            if (isset($shipping_methods[$shipping_method])) {
+                $method = $shipping_methods[$shipping_method];
+                $cart_json['shipping_method'] = $shipping_method;
+                $cart_json['shipping_cost'] = $method['cost'];
+
+            }
+        } 
+
+        //calculate total
+        $shipping_cost = $cart_json['shipping_cost'];
+        $cart_json['total'] = ($subtotal + $shipping_cost) - $coupon_discount;
+
+        if ($shipping_cost > 0) {
+            $cart_json['has_shipping'] = true;
+        } else {
+            $cart_json['has_shipping'] = false;
+        }
+
+        //save data
+        return $wpdb->update($cart_table, array(
+            'cart_value' => json_encode($cart_json),
+        ), array(
+            'user' => $user_id
+        ));
+    }
+}
+if (!function_exists("sk_update_wishlist")) {
+    function sk_update_wishlist($user_id, $product_id) {
+
+            $user_wishlist = get_user_meta( $user_id, 'sk_wishlist',true);
+            $wishlist = json_decode($user_wishlist, true);
+            
+            if ($wishlist && !empty($wishlist) && count($wishlist) > 0) {
+                //update
+                if (!sk_in_wishlist($user_id, $product_id))
+                    $wishlist[] = $product_id;
+            } else {
+                //create new
+                $wishlist = array($product_id);
+            }
+            return update_user_meta( $user_id, 'sk_wishlist', json_encode($wishlist));
+    }
+}
+if (!function_exists("sk_remove_from_wishlist")) {
+    function sk_remove_from_wishlist($user_id, $product_id) {
+
+            $user_wishlist = get_user_meta( $user_id, 'sk_wishlist',true);
+            $wishlist = json_decode($user_wishlist, true);
+            
+            if ($wishlist && !empty($wishlist) && count($wishlist) > 0) {
+                //remove from wishlist
+                foreach($wishlist as $pos => $wish_id) {
+                    if ($wish_id == $product_id) {
+                        unset($wishlist[$pos]);
+                        $wishlist = array_values($wishlist);
+                    }
+                }
+            }
+            return update_user_meta( $user_id, 'sk_wishlist', json_encode($wishlist));
+    }
+}
+if (!function_exists("sk_clear_wishlist")) {
+    function sk_clear_wishlist($user_id, $product_id) {
+
+            $user_wishlist = get_user_meta( $user_id, 'sk_wishlist',true);
+            $wishlist = json_decode($user_wishlist, true);
+            
+            if ($wishlist && !empty($wishlist) && count($wishlist) > 0) {
+                //update
+                if (!sk_in_wishlist($user_id, $product_id))
+                    $wishlist[] = $product_id;
+            } else {
+                //create new
+                $wishlist = array($product_id);
+            }
+            return update_user_meta( $user_id, 'sk_wishlist', json_encode($wishlist));
+    }
+}
+if (!function_exists("sk_get_wishlist")) {
+    function sk_get_wishlist($user_id) {
+            $user_wishlist = get_user_meta( $user_id, 'sk_wishlist',true);
+            return json_decode($user_wishlist, true); 
+    }
+}
+if (!function_exists("sk_wishlist_products")) {
+    function sk_wishlist_products($user_id, $data) {
+
+        $paged = isset($data['paged']) ? $data['paged'] : 1;
+        $post_per_page = isset($data['per_page']) ? $data['per_page'] : 20;
+        $product_cat = isset($data['cat']) ? $data['cat'] : null;
+        $post_in = (count(sk_get_wishlist($user_id)) > 0 ? sk_get_wishlist($user_id) : [0]);
+        $search = isset($data['search']) ? $data['search'] : null;
+
+        $query_args = array(
+            'post_type' => 'product',
+            'posts_per_page' => $post_per_page,
+            'paged' => $paged,
+            'product_cat' => $product_cat,
+            'post__in' => $post_in,
+            's' => $search,
+        );
+        if (isset($data['meta_key'])) $query_args['meta_key'] = $data['meta_key'];
+        if (isset($data['orderby'])) $query_args['orderby'] = $data['orderby'];
+        if (isset($data['order'])) $query_args['order'] = $data['order'];
+        if (isset($data['price_range'])) { 
+            $price_btw = explode('|', $data['price_range']);
+            $query_args['meta_query'] = array(
+                array(
+                    'key' => '_price',
+                    'value' => array($price_btw[0], $price_btw[1]),
+                    'compare' => 'BETWEEN',
+                    'type' => 'NUMERIC'
+                )
+            );
+        }
+        // 			for featured products
+        if (isset($data['featured'])) { 
+            $query_args['tax_query'] = array(
+                array(
+                    'taxonomy' => 'product_visibility',
+                    'field'    => 'name',
+                    'terms'    => 'featured',
+                )
+            );
+        }
+        
+        $query = new WP_Query($query_args);
+        
+
+        if (!$query->have_posts())
+        return array(
+            'results' => []
+        );
+
+        $product_array = array();
+        
+        while($query->have_posts()) {
+            $query->the_post();
+            $product_array["results"][] = sk_get_simple_product_array(get_the_ID(), $user_id);
+            }
+
+        // add pagination
+        $product_array['paged'] = $paged;
+        $product_array['pagination'] = sk_numeric_pagination($query, $data);
+        wp_reset_query();
+        
+        
+        return $product_array;
+    }
+}
+if (!function_exists("sk_in_wishlist")) {
+    function sk_in_wishlist($user_id, $product_id) {
+
+            $user_wishlist = get_user_meta( $user_id, 'sk_wishlist',true);
+            $wishlist = json_decode($user_wishlist, true);
+            
+            $result = false;
+            if ($wishlist && !empty($wishlist) && count($wishlist) > 0) {
+                foreach($wishlist as $product) {
+                    if ($product == $product_id) $result = true;
+                }
+            }
+            return $result;
+    }
+}
+
+
