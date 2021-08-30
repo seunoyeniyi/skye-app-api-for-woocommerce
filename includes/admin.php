@@ -1,4 +1,8 @@
 <?php
+//ALLOW WP list table class
+if (!class_exists('WP_List_Table')) {
+    require_once(ABSPATH . 'wp-admin/includes/class-wp-list-table.php');
+}
 
 //Skye App settings pages
 add_action( "admin_menu", function() {
