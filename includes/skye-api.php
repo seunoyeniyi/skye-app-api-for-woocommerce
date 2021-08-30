@@ -1037,63 +1037,32 @@ add_action( 'rest_api_init', function() {
     register_rest_route( SKYE_API_NAMESPACE_V1, '/banners', array(
         'methods' => 'GET',
         'callback' => function($data) {
+            global $wpdb;
+            $table_name = $wpdb->prefix . 'skye_app_banners'; // do not forget about tables prefix
             $count = 0;
             $arrays = array(
-                'enabled' => (get_option('sk_app_enable_banner_slides', 0)) ? true : false,
+                // 'enabled' => (get_option('sk_app_enable_banner_slides', 0)) ? true : false,
                 'empty' => true,
                 'count' => $count,
                 'results' => null
             );
-            if (get_option( "sk_app_banner_1_image", 0)) {
-                $count++;
-                $image_id = get_option( "sk_app_banner_1_image", 0);
-                $arrays['results'][] = array(
-                    'image' => wp_get_attachment_image_src( $image_id, null)[0],
-                    'click_to' => get_option( "sk_app_banner_1_click_to", null),
-                    'category' => get_option( "sk_app_banner_1_category", null),
-                    'url' => get_option( "sk_app_banner_1_url", null),
-                );
+
+            //fetch banners
+            $result = $wpdb->get_results("SELECT * FROM $table_name ORDER BY ID ASC");
+            if ($result && count($result) > 0) {
+                foreach ($result as $item) {
+                    $arrays['results'][] = array(
+                        'image' => wp_get_attachment_image_src( $item->image, null)[0],
+                        'title' => $item->title,
+                        'description' => $item->description,
+                        'on_click_to' => $item->on_click_to,
+                        'category' => $item->category,
+                        'url' => $item->url,
+                    );
+                }
             }
-            if (get_option( "sk_app_banner_2_image", 0)) {
-                $count++;
-                $image_id = get_option( "sk_app_banner_2_image", 0);
-                $arrays['results'][] = array(
-                    'image' => wp_get_attachment_image_src( $image_id, null)[0],
-                    'click_to' => get_option( "sk_app_banner_2_click_to", null),
-                    'category' => get_option( "sk_app_banner_2_category", null),
-                    'url' => get_option( "sk_app_banner_2_url", null),
-                );
-            }
-            if (get_option( "sk_app_banner_3_image", 0)) {
-                $count++;
-                $image_id = get_option( "sk_app_banner_3_image", 0);
-                $arrays['results'][] = array(
-                    'image' => wp_get_attachment_image_src( $image_id, null)[0],
-                    'click_to' => get_option( "sk_app_banner_3_click_to", null),
-                    'category' => get_option( "sk_app_banner_3_category", null),
-                    'url' => get_option( "sk_app_banner_3_url", null),
-                );
-            }
-            if (get_option( "sk_app_banner_4_image", 0)) {
-                $count++;
-                $image_id = get_option( "sk_app_banner_4_image", 0);
-                $arrays['results'][] = array(
-                    'image' => wp_get_attachment_image_src( $image_id, null)[0],
-                    'click_to' => get_option( "sk_app_banner_4_click_to", null),
-                    'category' => get_option( "sk_app_banner_4_category", null),
-                    'url' => get_option( "sk_app_banner_4_url", null),
-                );
-            }
-            if (get_option( "sk_app_banner_5_image", 0)) {
-                $count++;
-                $image_id = get_option( "sk_app_banner_5_image", 0);
-                $arrays['results'][] = array(
-                    'image' => wp_get_attachment_image_src( $image_id, null)[0],
-                    'click_to' => get_option( "sk_app_banner_5_click_to", null),
-                    'category' => get_option( "sk_app_banner_5_category", null),
-                    'url' => get_option( "sk_app_banner_5_url", null),
-                );
-            }
+
+
             //update count and empty
             $arrays['count'] = $count;
             $arrays['empty'] = ($count > 0);

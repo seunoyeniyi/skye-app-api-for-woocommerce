@@ -10,6 +10,7 @@ if (!function_exists('skye_activated')) {
     global $wpdb;
     $charset_collate = $wpdb->get_charset_collate();
     $cart_table = $wpdb->prefix . "skye_carts";
+    $banners_table = $wpdb->prefix . "skye_app_banners";
     
     require_once(ABSPATH . '/wp-admin/includes/upgrade.php');
     $sql = "CREATE TABLE IF NOT EXISTS " . $cart_table . " (
@@ -20,7 +21,19 @@ if (!function_exists('skye_activated')) {
                 PRIMARY KEY (ID)
             ) " . $charset_collate . ";";
     dbDelta($sql);
-    
+
+    //database for banners
+    $sql = "CREATE TABLE IF NOT EXISTS " . $banners_table . " (
+                ID INT NOT NULL AUTO_INCREMENT,
+                image INT,
+                title VARCHAR(2000),
+                description VARCHAR(2000),
+                on_click_to VARCHAR(1000),
+                category VARCHAR(1000),
+                url VARCHAR(2000),
+                PRIMARY KEY (ID)
+            ) " . $charset_collate . ";";
+    dbDelta($sql);
     }
 }
 //welcome message
