@@ -9,7 +9,7 @@
 	<div class="welcome-panel-column-container">
 	<div class="welcome-panel-column">
 					<h3>Get Started</h3>
-			<a class="button button-primary button-hero load-customize" href="http://localhost/wp-admin/admin.php?page=skye-app-banner-slides-list">Edit App Banners</a>
+			<a class="button button-primary button-hero load-customize" href="<?php echo admin_url('admin.php?page=skye-app-banner-slides-list'); ?>">Edit App Banners</a>
 			</div>
 	<div class="welcome-panel-column">
 		<h3>Next Steps</h3>
