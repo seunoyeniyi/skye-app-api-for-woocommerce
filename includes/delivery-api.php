@@ -169,6 +169,19 @@ register_rest_route( SKYE_API_NAMESPACE_V1, '/update-driver-order/(?P<order_id>.
             if ($status == "picked") {
                 $order->update_meta_data('skye_order_delivery_status', 'picked');
                 $order->save();
+                //notify customer
+                $customer = get_user_by( 'ID', $order->get_user_id());
+                if ($customer) {
+                    if ($customer->user_email) {
+                        $email = $customer->user_email;
+                        $message = "<h3>Your order has been picked!</h3>
+                        <h4>Order: #" . $order->get_id() . "</h4>
+                        <p>Your order has been picked by our driver login to web/mobile app to track your order.</p>";
+                        $headers = array('Content-Type: text/html; charset=UTF-8');
+                        $subject = get_bloginfo( 'name') . ' - Your order is on the way';
+                        wp_mail( $email, $subject, $message, $headers);
+                    }
+                }
             } else {
                 $order->update_status($status);
             }

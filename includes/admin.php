@@ -453,10 +453,24 @@ if (!function_exists('skye_save_wc_order_other_fields')) {
         // --- Its safe for us to save the data ! --- //
 
         // Sanitize user input  and update the meta field in the database.
-        if (empty($_POST['skye_order_drivers_input'])) {
+        $driver_id = $_POST['skye_order_drivers_input'];
+        if (empty($driver_id)) {
             delete_post_meta( $post_id, 'skye_order_driver');
         } else {
-            update_post_meta($post_id, 'skye_order_driver', $_POST['skye_order_drivers_input']);
+            update_post_meta($post_id, 'skye_order_driver', $driver_id);
+            //notify driver
+            $driver = get_user_by( 'ID', $driver_id);
+            if ($driver) {
+                if ($driver->user_email) {
+                    $email = $driver->user_email;
+                    $message = "<h3>You have new order to deliver</h3>
+                    <h4>Order: #" . $post_id . "</h4>
+                    <p>Open your delivery app to view details.</p>";
+                    $headers = array('Content-Type: text/html; charset=UTF-8');
+                    $subject = get_bloginfo( 'name') . ' - You have new order to deliver';
+                    wp_mail( $email, $subject, $message, $headers);
+                }
+            }
         }
     }
 }
