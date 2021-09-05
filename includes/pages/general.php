@@ -14,7 +14,7 @@
 	<div class="welcome-panel-column">
 		<h3>Next Steps</h3>
 		<ul>
-					<li>Comming soon...</li>
+					<li><span class="dashicons dashicons-cart"></span> <a href="<?php echo admin_url('admin.php?page=skye-app-delivery-drivers'); ?>">Delivery Drivers</a></li>
 			        <!-- <li><a href="http://localhost/wp-admin/post-new.php?post_type=page" class="welcome-icon welcome-add-page">Add additional pages</a></li> -->
 					<!-- <li><a href="http://localhost/" class="welcome-icon welcome-view-site">View your site</a></li> -->
 		</ul>

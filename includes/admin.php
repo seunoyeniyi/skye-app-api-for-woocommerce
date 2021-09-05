@@ -5,42 +5,64 @@ if (!class_exists('WP_List_Table')) {
 }
 
 //Skye App settings pages
-add_action( "admin_menu", function() {
-    add_menu_page( 
-        "Skye App Settings", 
-        "Skye App Settings", 
-        "manage_options", 
-        "skye-app", "skye_app_func", 
-        plugin_dir_url( __DIR__ ) . "assets/icons8_iphone_20px.png", 
+add_action("admin_menu", function () {
+    add_menu_page(
+        "Skye App",
+        "Skye App",
+        "manage_options",
+        "skye-app",
+        "skye_app_func",
+        plugin_dir_url(__DIR__) . "assets/icons8_iphone_20px.png",
         60
     );
     // if (ENABLE_SLIDING_BANNER)
-        // add_submenu_page( "skye-app", "App Banner Slides", "Banner Slides", "manage_options", "skye-app-banner-slides", "skye_app_banner_slides", 1);
+    // add_submenu_page( "skye-app", "App Banner Slides", "Banner Slides", "manage_options", "skye-app-banner-slides", "skye_app_banner_slides", 1);
     // if (ENABLE_SCROLLING_BANNER)
     //     add_submenu_page( "skye-app", "App Banner Scrolls", "Small Banner Scrolls", "manage_options", "skye-app-banner-scrolls", "skye_app_banner_scrolls", 2);
 
 
-    add_submenu_page( "skye-app", "Banners Slides", "Banner Slides", "manage_options", "skye-app-banner-slides-list", "skye_app_banner_slides_list", 1);
-    add_submenu_page( null, "Edit Banner Slides", "Edit Banner Slides", "manage_options", "skye_edit_banner", "skye_app_banner_slides_edit", 2); //hidden for edit
-    
+    add_submenu_page("skye-app", "Banners Slides", "Banner Slides", "manage_options", "skye-app-banner-slides-list", "skye_app_banner_slides_list", 1);
+    add_submenu_page(null, "Edit Banner Slides", "Edit Banner Slides", "manage_options", "skye_edit_banner", "skye_app_banner_slides_edit", 2); //hidden for edit
+    add_submenu_page("skye-app", "Delivery Drivers", "Delivery Drivers", "manage_options", "skye-app-delivery-drivers", "skye_app_delivery_drivers_func", 2);
+
 });
 
 
-function skye_app_func() { include(plugin_dir_path( __FILE__ ) . 'pages/general.php'); }
-function skye_app_banner_slides() { include(plugin_dir_path( __FILE__ ) . 'pages/banner-slides.php'); }
-function skye_app_banner_scrolls() { include(plugin_dir_path( __FILE__ ) . 'pages/banner-scrolls.php'); }
+function skye_app_func()
+{
+    include(plugin_dir_path(__FILE__) . 'pages/general.php');
+}
+function skye_app_banner_slides()
+{
+    include(plugin_dir_path(__FILE__) . 'pages/banner-slides.php');
+}
+function skye_app_banner_scrolls()
+{
+    include(plugin_dir_path(__FILE__) . 'pages/banner-scrolls.php');
+}
 
-function skye_app_banner_slides_list() { include(plugin_dir_path( __FILE__ ) . 'pages/banners-slides-list.php'); }
-function skye_app_banner_slides_edit() { include(plugin_dir_path( __FILE__ ) . 'pages/edit-banner.php'); }
+function skye_app_banner_slides_list()
+{
+    include(plugin_dir_path(__FILE__) . 'pages/banners-slides-list.php');
+}
+function skye_app_banner_slides_edit()
+{
+    include(plugin_dir_path(__FILE__) . 'pages/edit-banner.php');
+}
+function skye_app_delivery_drivers_func()
+{
+    include(plugin_dir_path(__FILE__) . 'pages/delivery-drivers.php');
+}
 
 
 
 
 // Add Styles and Scripts to Settings page
-add_action( 'admin_enqueue_scripts', 'skye_apps_scripts_func' );
-function skye_apps_scripts_func($hook) {
-    wp_enqueue_style( "skye_app_css", plugin_dir_url( __DIR__ ) . "css/admin-style.css");
-    wp_enqueue_script( 'skye_app_script', plugin_dir_url( __DIR__ ) . "js/admin-script.js");
+add_action('admin_enqueue_scripts', 'skye_apps_scripts_func');
+function skye_apps_scripts_func($hook)
+{
+    wp_enqueue_style("skye_app_css", plugin_dir_url(__DIR__) . "css/admin-style.css");
+    wp_enqueue_script('skye_app_script', plugin_dir_url(__DIR__) . "js/admin-script.js");
 }
 
 function skye_app_validate_banner($item)
@@ -59,51 +81,50 @@ function skye_app_validate_banner($item)
 }
 function skye_app_banners_form_meta_box_handler($item)
 {
-    ?>
+?>
 
     <table cellspacing="2" cellpadding="5" style="width: 100%;" class="form-table" id="skye-app-banner-form">
-    <tbody>
-    <tr class="form-field">
-        <th valign="top" scope="row">
-            <label for="image"><?php _e('Image', 'cltd_example')?></label>
-        </th>
-        <td>
+        <tbody>
+            <tr class="form-field">
+                <th valign="top" scope="row">
+                    <label for="image"><?php _e('Image', 'cltd_example') ?></label>
+                </th>
+                <td>
 
-            <input name="image" id="image" type="hidden" value="<?php echo esc_attr($item['image'])?>" required>
-            <?php if ($item['id'] == 0 || empty($item['image'])) { ?>
-                <a href="javascript:void(0);" id="skye-app-change-image" style="cursor: pointer; display: inline-block;"></a>
-                <button type="button" id="skye-app-select-image" class="button">Select image</button>
-                <button type="button" id="skye-app-remove-image" class="button button-primary" style="display: none;">Remove image</button>
-            <?php } else { ?>
-                    <?php 
-                        $banner_image = wp_get_attachment_image_src( $item['image'], null);
+                    <input name="image" id="image" type="hidden" value="<?php echo esc_attr($item['image']) ?>" required>
+                    <?php if ($item['id'] == 0 || empty($item['image'])) { ?>
+                        <a href="javascript:void(0);" id="skye-app-change-image" style="cursor: pointer; display: inline-block;"></a>
+                        <button type="button" id="skye-app-select-image" class="button">Select image</button>
+                        <button type="button" id="skye-app-remove-image" class="button button-primary" style="display: none;">Remove image</button>
+                    <?php } else { ?>
+                        <?php
+                        $banner_image = wp_get_attachment_image_src($item['image'], null);
                         if (!$banner_image)
-                            $banner_image = plugin_dir_url( __DIR__ ) . "assets/icons8_image_500px.png";
-                    ?>
-                <a href="#" id="skye-app-change-image" style="cursor: pointer; display: inline-block;"><img style="width: auto; heigth: auto; max-height: 200px; border: 1px solid #dfdfdf;" src="<?php echo  $banner_image[0]; ?>" /></a>
-                <button type="button" id="skye-app-remove-image" class="button button-primary">Remove image</button>
-                <button type="button" id="skye-app-select-image" class="button" style="display: none;">Select image</button>
-           <?php } ?>
-        </td>
-    </tr>
-    <tr class="form-field">
-        <th valign="top" scope="row">
-            <label for="title"><?php _e('Title', 'cltd_example')?></label>
-        </th>
-        <td>
-            <input id="title" name="title" type="text" style="width: 95%" value="<?php echo esc_attr($item['title'])?>"
-                   size="50" class="code" placeholder="<?php _e('Title', 'cltd_example')?>" required>
-        </td>
-    </tr>
-    <tr class="form-field">
-        <th valign="top" scope="row">
-            <label for="description"><?php _e('Description', 'cltd_example')?></label>
-        </th>
-        <td>
-            <textarea id="d" name="description" style="width: 95%" size="50" class="code" placeholder="<?php _e('Description', 'cltd_example')?>" required><?php echo esc_attr($item['description'])?></textarea>
-        </td>
-    </tr>
-    </tbody>
+                            $banner_image = plugin_dir_url(__DIR__) . "assets/icons8_image_500px.png";
+                        ?>
+                        <a href="#" id="skye-app-change-image" style="cursor: pointer; display: inline-block;"><img style="width: auto; heigth: auto; max-height: 200px; border: 1px solid #dfdfdf;" src="<?php echo  $banner_image[0]; ?>" /></a>
+                        <button type="button" id="skye-app-remove-image" class="button button-primary">Remove image</button>
+                        <button type="button" id="skye-app-select-image" class="button" style="display: none;">Select image</button>
+                    <?php } ?>
+                </td>
+            </tr>
+            <tr class="form-field">
+                <th valign="top" scope="row">
+                    <label for="title"><?php _e('Title', 'cltd_example') ?></label>
+                </th>
+                <td>
+                    <input id="title" name="title" type="text" style="width: 95%" value="<?php echo esc_attr($item['title']) ?>" size="50" class="code" placeholder="<?php _e('Title', 'cltd_example') ?>" required>
+                </td>
+            </tr>
+            <tr class="form-field">
+                <th valign="top" scope="row">
+                    <label for="description"><?php _e('Description', 'cltd_example') ?></label>
+                </th>
+                <td>
+                    <textarea id="d" name="description" style="width: 95%" size="50" class="code" placeholder="<?php _e('Description', 'cltd_example') ?>" required><?php echo esc_attr($item['description']) ?></textarea>
+                </td>
+            </tr>
+        </tbody>
     </table>
     <?php
 }
@@ -186,11 +207,12 @@ class Skye_App_Banners_List_Table extends WP_List_Table
             'delete' => sprintf('<a href="?page=%s&action=delete&id=%s">%s</a>', $_REQUEST['page'], $item['ID'], __('Delete', 'cltd_example')),
         );
 
-        $banner_image = wp_get_attachment_image_src( $item['image'], null);
-            if (!$banner_image)
-                $banner_image = plugin_dir_url( __DIR__ ) . "assets/icons8_image_500px.png";
-                
-        return sprintf('%s %s',
+        $banner_image = wp_get_attachment_image_src($item['image'], null);
+        if (!$banner_image)
+            $banner_image = plugin_dir_url(__DIR__) . "assets/icons8_image_500px.png";
+
+        return sprintf(
+            '%s %s',
             "<img src='" . $banner_image[0] . "' style='width: auto; heigth: auto; max-height: 200px; border: 1px solid #dfdfdf;'>",
             $this->row_actions($actions)
         );
@@ -321,6 +343,120 @@ class Skye_App_Banners_List_Table extends WP_List_Table
             'total_pages' => ceil($total_items / $per_page) // calculate pages count
         ));
     }
+}
 
 
+//FOR DELIVERY API
+add_filter('manage_edit-shop_order_columns', 'skye_add_driver_order_column_to_admin_table');
+
+function skye_add_driver_order_column_to_admin_table($columns)
+{
+    $reordered_columns = array();
+    foreach ($columns as $key => $column) {
+        $reordered_columns[$key] = $column;
+        if ($key ==  'order_status') {
+            // Inserting after "Status" column
+            $reordered_columns['skye_driver'] = __('Driver', 'skye_domain');
+        }
+    }
+    return $reordered_columns;
+}
+add_action('manage_shop_order_posts_custom_column', 'skye_add_driver_order_column_to_admin_table_content');
+
+function skye_add_driver_order_column_to_admin_table_content($column)
+{
+
+    global $post;
+
+    if ('skye_driver' === $column) {
+
+        $order = wc_get_order($post->ID);
+        $driver_id = $order->get_meta("skye_order_driver");
+        if ($driver_id) {
+            $user = get_user_by('ID', $driver_id);
+            if ($user) {
+                echo "<a href='user-edit.php?user_id=" . $user->ID . "'><b>" . $user->display_name . "</b></a>";
+            }
+        }
+    }
+}
+
+// Adding Meta container admin shop_order pages
+add_action('add_meta_boxes', 'skye_add_driver_meta_boxes');
+if (!function_exists('skye_add_driver_meta_boxes')) {
+    function skye_add_driver_meta_boxes()
+    {
+        add_meta_box('skye_other_fields', __('Driver', 'woocommerce'), 'skye_add_driver_fields_for_packaging', 'shop_order', 'side', 'high');
+    }
+}
+
+// Adding Meta field in the meta container admin shop_order pages
+if (!function_exists('skye_add_driver_fields_for_packaging')) {
+    function skye_add_driver_fields_for_packaging()
+    {
+        global $post;
+
+        $meta_field_data = get_post_meta($post->ID, 'skye_order_driver', true) ? get_post_meta($post->ID, 'skye_order_driver', true) : '';
+        $sk_drivers = get_users(array('role' => 'skye_delivery_driver'));
+    ?>
+        <input type="hidden" name="skye_order_meta_field_nonce" value="<?php echo wp_create_nonce(); ?>">
+
+            <label>Driver</label> <br>
+            <select name="skye_order_drivers_input" id="skye_order_drivers_input" style="width: 100%;">
+                <option value="">Assign a Driver</option>
+                <?php foreach($sk_drivers as $driver) { ?>
+                    <option value="<?php echo $driver->ID; ?>" <?php echo ($driver->ID == $meta_field_data) ? "selected" : ""; ?>><?php echo $driver->display_name; ?></option>
+                <?php } ?>
+            </select>
+        
+<?php
+    }
+}
+
+// Save the data of the Meta field
+add_action('save_post', 'skye_save_wc_order_other_fields', 10, 1);
+if (!function_exists('skye_save_wc_order_other_fields')) {
+
+    function skye_save_wc_order_other_fields($post_id)
+    {
+
+        // We need to verify this with the proper authorization (security stuff).
+
+        // Check if our nonce is set.
+        if (!isset($_POST['skye_order_meta_field_nonce'])) {
+            return $post_id;
+        }
+        $nonce = $_REQUEST['skye_order_meta_field_nonce'];
+
+        //Verify that the nonce is valid.
+        if (!wp_verify_nonce($nonce)) {
+            return $post_id;
+        }
+
+        // If this is an autosave, our form has not been submitted, so we don't want to do anything.
+        if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) {
+            return $post_id;
+        }
+
+        // Check the user's permissions.
+        if ('page' == $_POST['post_type']) {
+
+            if (!current_user_can('edit_page', $post_id)) {
+                return $post_id;
+            }
+        } else {
+
+            if (!current_user_can('edit_post', $post_id)) {
+                return $post_id;
+            }
+        }
+        // --- Its safe for us to save the data ! --- //
+
+        // Sanitize user input  and update the meta field in the database.
+        if (empty($_POST['skye_order_drivers_input'])) {
+            delete_post_meta( $post_id, 'skye_order_driver');
+        } else {
+            update_post_meta($post_id, 'skye_order_driver', $_POST['skye_order_drivers_input']);
+        }
+    }
 }

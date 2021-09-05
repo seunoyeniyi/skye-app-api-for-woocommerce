@@ -76,6 +76,8 @@ if (!function_exists('sk_get_product_array')) {
     $return_default_attributes = array();
     $default_attributes = $product->get_default_attributes();
     foreach ($default_attributes as $attr => $attribute) {
+		if (is_string($attribute))
+			continue;
         $data = $attribute->get_data();
         $data['label'] = wc_attribute_label($data['name']);
         $return_default_attributes[] = $data;
@@ -176,7 +178,7 @@ if (!function_exists('sk_get_simple_product_array')) {
     // foreach($tags_ids as $tag_id) {
     //     $tags[] = get_term_by('id', $tag_id, 'product_tag');
     // }
-    
+
     // //setup attributes
     // $attributes = $product->get_attributes();
     // // die(print_r($data['kdl'] = $product->get_attribute("pa_size")));
@@ -308,7 +310,7 @@ if (!function_exists('sk_user_cart_exists')) {
     global $wpdb;
     $charset_collate = $wpdb->get_charset_collate();
     $cart_table = $wpdb->prefix . "skye_carts";
-    
+
     $result = $wpdb->get_results("SELECT * FROM $cart_table WHERE user='$user_id' LIMIT 1");
     if (count($result) > 0)
         return true;
@@ -321,7 +323,7 @@ if (!function_exists('sk_get_cart_value')) {
     global $wpdb;
     $charset_collate = $wpdb->get_charset_collate();
     $cart_table = $wpdb->prefix . "skye_carts";
-    
+
     $result = $wpdb->get_results("SELECT * FROM $cart_table WHERE user='$user_id' LIMIT 1");
     if (count($result) > 0)
         return $result[0]->cart_value;
@@ -356,7 +358,7 @@ if (!function_exists('sk_change_cart_user_id')) {
     //get the cart user json to update the id in the json
     $user_cart_json = json_decode(sk_get_cart_value($cart_user_id), true);
     $user_cart_json['user'] = $new_user_id;
-    
+
     return $wpdb->update($cart_table, array(
         'user' => $new_user_id,
         'cart_value' => json_encode($user_cart_json),
@@ -399,7 +401,7 @@ if (!function_exists('sk_update_cart_coupon')) {
     }
 
     $cart_json['has_shipping'] = (isset($cart_json['has_shipping'])) ? $cart_json['has_shipping'] : false;
-    
+
     return $wpdb->update($cart_table, array(
         'cart_value' => json_encode($cart_json),
     ), array(
@@ -411,7 +413,7 @@ if (!function_exists('sk_delete_user_cart')) {
     function sk_delete_user_cart($user_id) {
     global $wpdb;
     $cart_table = $wpdb->prefix . "skye_carts";
-    
+
     return $wpdb->delete($cart_table, array('user' => $user_id));
     }
 }
@@ -438,9 +440,9 @@ if (!function_exists('sk_generate_new_user_hash_id')) {
     global $wpdb;
     $charset_collate = $wpdb->get_charset_collate();
     $cart_table = $wpdb->prefix . "skye_carts";
-    
+
     $result = $wpdb->get_results("SELECT ID FROM $cart_table ORDER BY ID DESC LIMIT 1");
-    
+
     if (!empty($result))
         return md5(((int) $result[0]->ID) + 1);
     else
@@ -457,7 +459,7 @@ if (!function_exists("sk_get_product_variations")) {
             // Variation ID
             $variation_id = $variation['variation_id'];
             $attr_collections["ID"] = $variation_id;
-    
+
             // Attributes
             $attr_collections['attributes'] = array();
             foreach( $variation['attributes'] as $key => $value ){
@@ -507,14 +509,14 @@ if (!function_exists('sk_cart_json_handler')) {
                     'selected' => $product->get_attribute($key),
                 );
             }
-    
+
         }
     } else {
         foreach ($attributes as $attr => $attribute) {
             $return_attributes[$attr] = $attribute->get_data();
         }
     }
-    
+
     $return_array = array();
     if (is_null($old_cart_json)) { //create new array
             //DEFAULT VALUE FOR NEW CART
@@ -542,7 +544,7 @@ if (!function_exists('sk_cart_json_handler')) {
             // $return_array['total'] = WC()->cart->total;
 
         //ITEMS in the cart
-        $return_array['items'] = array(); 
+        $return_array['items'] = array();
         $return_array['items'][] = array( //products added
                     'ID' => $product_id,
                     'quantity' => $quantity,
@@ -652,13 +654,25 @@ if (!function_exists('sk_user_exists')) {
     return ($user != false);
     }
 }
+if (!function_exists('sk_is_user_driver')) {
+    function sk_is_user_driver($user_id)
+    {
+        $user = get_user_by('ID', $user_id);
+        if ($user) {
+            $roles = $user->roles;
+            return (in_array('skye_delivery_driver', $roles));
+        } else {
+            return false;
+        }
+    }
+}
 if (!function_exists('sk_order_info')) {
     function sk_order_info($order_id) {
     $return_array = array();
     $order = wc_get_order( $order_id );
     if ( $order ) {
         $return_array['ID'] = $order->get_id();
- 
+
         // Get Order Totals $0.00
         // $return_array['formatted_order_total'] = $order->get_formatted_order_total(); //html formatted
         $return_array['cart_tax'] = $order->get_cart_tax();
@@ -706,7 +720,7 @@ if (!function_exists('sk_order_info')) {
             );
             $return_array['products'][] = array_merge($rr, sk_get_product_array($item->get_product_id()));
          }
-     
+
          // Other Secondary Items Stuff
         // $return_array['items_key'] = $order->get_items_key(); //protected error
         $return_array['items_tax_classes'] = $order->get_items_tax_classes();
@@ -718,6 +732,9 @@ if (!function_exists('sk_order_info')) {
         // $return_array['line_subtotal'] = $order->get_line_subtotal(); //few argument
         // $return_array['line_tax'] = $order->get_line_tax(); //protected error
         // $return_array['line_total'] = $order->get_line_total(); //few argument
+
+        $return_array['skye_delivery_status'] = $order->get_meta('skye_order_delivery_status');
+        $return_array['skye_driver_location'] = $order->get_meta('skye_order_driver_location');
 
         // Get Order Shipping
         $return_array['shipping_method'] = $order->get_shipping_method();
@@ -801,7 +818,7 @@ if (!function_exists('sk_order_exists')) {
 //code from WPBeginner
 if (!function_exists('sk_numeric_pagination')) {
     function sk_numeric_pagination($query, $data) {
- 
+
  if( is_singular() )
      return null;
 
@@ -863,7 +880,7 @@ if (!function_exists("sk_get_user_shipping_address")) {
     function sk_get_user_shipping_address($user_id) {
         $customer = new WC_Customer( $user_id );
         $array = array();
-        
+
         $array['username']     = $customer->get_username(); // Get username
         $array['user_email']   = $customer->get_email(); // Get account email
         $array['first_name']   = $customer->get_first_name();
@@ -890,7 +907,7 @@ if (!function_exists("sk_get_user_billing_address")) {
     function sk_get_user_billing_address($user_id) {
         $customer = new WC_Customer( $user_id );
         $array = array();
-        
+
         $array['username']     = $customer->get_username(); // Get username
         $array['user_email']   = $customer->get_email(); // Get account email
         $array['first_name']   = $customer->get_first_name();
@@ -961,7 +978,7 @@ if (!function_exists("sk_get_regions")) {
         $wc_countries = new WC_Countries();
         $array['countries'] = $wc_countries->get_countries();
         $array['states'] = $wc_countries->get_states();
-                
+
         return $array;
     }
 }
@@ -1034,17 +1051,17 @@ if (!function_exists("sk_update_cart_shipping")) {
                     $classes_cost += (is_numeric($unit_cost)) ? $unit_cost : 0;
                 } else {
                     //no class cost
-                    $unit_cost = $instance['no_class_cost'];
+                    $unit_cost = isset($instance['no_class_cost']) ? $instance['no_class_cost'] : 0;
                     $classes_cost += (is_numeric($unit_cost)) ? $unit_cost : 0;
                 }
             }
             //add the shipping classes cost to the shipping cost
             $cart_json['shipping_methods'][$method->id] = array(
                 'title' => $method->method_title,
-                'cost' => $method->cost + $classes_cost,
+                'cost' => isset($method->cost) ? ($method->cost + $classes_cost) : $classes_cost,
             );
         }
-        
+
         $shipping_method = (isset($cart_json['shipping_methods']['flat_rate'])) ? 'flat_rate' : null; //default method else null
         $cart_json['shipping_method'] = $shipping_method;
         $cart_json['shipping_cost'] = (!is_null($shipping_method)) ? $cart_json['shipping_methods'][$shipping_method]['cost'] : 0;
@@ -1067,7 +1084,7 @@ if (!function_exists("sk_update_cart_shipping")) {
             $cart_json['has_shipping'] = false;
         }
 
-        
+
         return $wpdb->update($cart_table, array(
             'cart_value' => json_encode($cart_json),
         ), array(
@@ -1099,7 +1116,7 @@ if (!function_exists("sk_change_cart_shipping_method")) {
             if (isset($shipping_methods[$shipping_method])) {
                 $method = $shipping_methods[$shipping_method];
                 $cart_json['shipping_method'] = $shipping_method;
-                $cart_json['shipping_cost'] = $method['cost'];
+                $cart_json['shipping_cost'] = isset($method['cost']) ? $method['cost'] : 0;
 
             }
         } 

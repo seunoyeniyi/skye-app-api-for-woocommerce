@@ -36,6 +36,7 @@ add_action( 'rest_api_init', function() {
             $email = (isset($data['email'])) ? sanitize_email($data['email']) : null;
             $password = (isset($data['password'])) ? $data['password'] : null;
             $register_type = (isset($data['register_type'])) ? $data['register_type'] : null;
+            $replace_cart_user = (isset($data['replace_cart_user'])) ? $data['replace_cart_user'] : null;
             $tron_wallet = (isset($data['tron_wallet'])) ? $data['tron_wallet'] : null;
             //return ID of the newly registerd user
             if (!is_null($register_type)) {
@@ -64,7 +65,14 @@ add_action( 'rest_api_init', function() {
             if (!is_null($tron_wallet)) { //add tron wallet to user profile
                 update_user_meta( $user_id, 'tron_wallet', $tron_wallet );
             }
+
+
+
             if (is_numeric($user_id)) {
+                if (!is_null($replace_cart_user)) {
+                            if (sk_user_cart_exists($replace_cart_user))
+                                sk_change_cart_user_id($replace_cart_user, $user_id);
+                }
                 return sk_get_user_info($user_id);
             } else {
                 return $user_id;
@@ -945,13 +953,23 @@ add_action( 'rest_api_init', function() {
         }
     ));
     //get variation from attributes;
-        register_rest_route( SKYE_API_NAMESPACE_V1, '/product-variation/(?P<product_id>\d+)', array(
+    register_rest_route( SKYE_API_NAMESPACE_V1, '/product-variation/(?P<product_id>\d+)', array(
             'methods' => 'GET',
             'callback' => function($data) {
                 function treat($s) {
-                    $s = strtolower($s);
-                    return sanitize_title($s);
-                }
+                                    $s = strtolower($s);
+                					$s = sanitize_title($s);
+                					if (substr($s, -3)  == "-kg") {
+                						$s = str_replace('-kg', 'kg', $s);
+                					}
+                					if (substr($s, -3)  == "-ml") {
+                						$s = str_replace('-ml', 'ml', $s);
+                					}
+                					if (substr($s, -2)  == "-g") {
+                						$s = str_replace('-g', 'g', $s);
+                					}
+                					return $s;
+                                }
                 $product_id = $data['product_id'];
                 $attribute_params = $data->get_query_params();
                 $attribute_params = array_change_key_case($attribute_params, CASE_LOWER); //to be able to match
@@ -980,7 +998,7 @@ add_action( 'rest_api_init', function() {
 
                 return null;
             }
-        ));
+    ));
 
     //COPY CODE AFTER THIS FOR GIVEPHUCK UPDATE
     register_rest_route( SKYE_API_NAMESPACE_V1, '/regions', array(
@@ -1133,4 +1151,9 @@ add_action( 'rest_api_init', function() {
     ));
 
     
+
+
+    //FOR DELIVERY API
+    include(plugin_dir_path( __FILE__ ) . 'delivery-api.php');
+
 });

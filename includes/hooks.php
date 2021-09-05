@@ -80,6 +80,15 @@ include(plugin_dir_path( __FILE__ ) . 'admin.php');
 // }
 // END OF - FOR GIVEVPHUCK WEBSITE 
 
+function skye_update_custom_roles() {
+    if ( get_option( 'skye_driver_roles_version' ) < 1 ) {
+        add_role( 'skye_delivery_driver', 'Skye Delivery Driver', array( 'read' => true, 'level_0' => true ) );
+        update_option( 'skye_driver_roles_version', 1 );
+    }
+}
+add_action( 'init', 'skye_update_custom_roles' );
+
+
 // FOR WEB PAYMENT
 add_action( 'wp_loaded', function() {
     if (isset($_GET["sk-user-checkout"]) && isset($_GET['sk-web-payment'])) {
@@ -113,6 +122,7 @@ function ava_test_init() {
         wp_enqueue_script( 'sk-js', plugins_url( '/script.js', __FILE__ ));
     }
 }
+
 //for in app browser
 add_action('wp_head', function() {
     if (isset($_GET["sk-user-checkout"]) && isset($_GET["sk-stripe-checkout"]) && isset($_GET["pay_for_order"])) { //for stripe payment and browser
