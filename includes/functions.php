@@ -744,6 +744,8 @@ if (!function_exists('sk_order_info')) {
         // Get Order Dates
         $return_array['date_created'] = $order->get_date_created();
         $return_array['date_modified'] = $order->get_date_modified();
+        $date_modified = $order->get_date_modified();
+        $return_array['date_modified_date'] = $date_modified->date("d-m-Y");
         $return_array['date_completed'] = $order->get_date_completed();
         $return_array['date_paid'] = $order->get_date_paid();
 
