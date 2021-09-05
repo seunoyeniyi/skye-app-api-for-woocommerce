@@ -30,7 +30,11 @@
                     <td class="title column-title has-row-actions column-primary" data-colname="Driver">
                         <b>
                         <a href="post.php?post=<?php echo $order->get_id(); ?>&action=edit">
-                            #<?php echo $order->get_id(); ?> <?php echo $order->get_billing_first_name(); ?> <?php echo $order->get_billing_last_name(); ?>
+                            #<?php echo $order->get_id(); ?> 
+                            <?php 
+								$customer = new WC_Customer( $order->get_user_id() );
+								echo $customer->get_display_name();
+							?>
                         </a>
                         </b>
                     </td>
@@ -95,7 +99,11 @@
                     <td class="title column-title has-row-actions column-primary" data-colname="Driver">
                         <b>
                         <a href="post.php?post=<?php echo $order->get_id(); ?>&action=edit">
-                            #<?php echo $order->get_id(); ?> <?php echo $order->get_billing_first_name(); ?> <?php echo $order->get_billing_last_name(); ?>
+                            #<?php echo $order->get_id(); ?> 
+                            <?php 
+								$customer = new WC_Customer( $order->get_user_id() );
+								echo $customer->get_display_name();
+							?>
                         </a>
                         </b>
                     </td>
