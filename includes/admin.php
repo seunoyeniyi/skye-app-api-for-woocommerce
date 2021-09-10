@@ -457,20 +457,25 @@ if (!function_exists('skye_save_wc_order_other_fields')) {
         if (empty($driver_id)) {
             delete_post_meta( $post_id, 'skye_order_driver');
         } else {
-            update_post_meta($post_id, 'skye_order_driver', $driver_id);
-            //notify driver
-            $driver = get_user_by( 'ID', $driver_id);
-            if ($driver) {
-                if ($driver->user_email) {
-                    $email = $driver->user_email;
-                    $message = "<h3>You have new order to deliver</h3>
-                    <h4>Order: #" . $post_id . "</h4>
-                    <p>Open your delivery app to view details.</p>";
-                    $headers = array('Content-Type: text/html; charset=UTF-8');
-                    $subject = get_bloginfo( 'name') . ' - You have new order to deliver';
-                    wp_mail( $email, $subject, $message, $headers);
+            $order = new WC_Order($post_id);
+            if (!$order->has_status('completed')) {
+                update_post_meta($post_id, 'skye_order_driver', $driver_id);
+                update_post_meta($post_id, 'skye_order_delivery_status', '');
+                //notify driver
+                $driver = get_user_by( 'ID', $driver_id);
+                if ($driver) {
+                    if ($driver->user_email) {
+                        $email = $driver->user_email;
+                        $message = "<h3>You have new order to deliver</h3>
+                        <h4>Order: #" . $post_id . "</h4>
+                        <p>Open your delivery app to view details.</p>";
+                        $headers = array('Content-Type: text/html; charset=UTF-8');
+                        $subject = get_bloginfo( 'name') . ' - You have new order to deliver';
+                        wp_mail( $email, $subject, $message, $headers);
+                    }
                 }
             }
+
         }
     }
 }

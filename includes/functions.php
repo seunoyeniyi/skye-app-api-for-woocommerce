@@ -378,7 +378,7 @@ if (!function_exists('sk_update_cart_coupon')) {
     if (!isset($cart_json['shipping_cost'])) $cart_json['shipping_cost'] = 0; //to be able to calculate total in app
     $shipping_cost = $cart_json['shipping_cost'];
     $coup = new WC_Coupon($coupon);
-    if ($coup->is_valid()) {
+    if ($coup->id) {
         $cart_json['coupon'] = $coupon;
         $cart_json['coupon_type'] = $coup->get_discount_type();
         $cart_json['coupon_amount'] = $coup->get_amount();
@@ -398,6 +398,7 @@ if (!function_exists('sk_update_cart_coupon')) {
     } else {
         $cart_json['has_coupon'] = false;
         $cart_json['coupon_discount'] = 0;
+        $cart_json['total'] = $cart_json['subtotal'] + $cart_json['shipping_cost'];
     }
 
     $cart_json['has_shipping'] = (isset($cart_json['has_shipping'])) ? $cart_json['has_shipping'] : false;
@@ -1278,6 +1279,12 @@ if (!function_exists("sk_in_wishlist")) {
                 }
             }
             return $result;
+    }
+}
+if (!function_exists('sk_order_assigned_to_this_driver')) {
+    function sk_order_assigned_to_this_driver($order_id, $user_id) {
+        $order = new WC_Order($order_id);
+        return ($order->get_meta("skye_order_driver") == $user_id);
     }
 }
 

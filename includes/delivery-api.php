@@ -3,6 +3,7 @@
 //confirm driver login
 register_rest_route( SKYE_API_NAMESPACE_V1, '/driver-authenticate', array(
     'methods' => 'POST',
+            'permission_callback' => function() {return true; },
     'callback' => function($data) {
         $username = (isset($data['username'])) ? sanitize_text_field($data['username']) : null;
         $email = (isset($data['email'])) ? sanitize_email($data['email']) : null;
@@ -30,6 +31,7 @@ register_rest_route( SKYE_API_NAMESPACE_V1, '/driver-authenticate', array(
 //register driver
 register_rest_route( SKYE_API_NAMESPACE_V1, '/register-driver', array(
     'methods' => 'POST',
+            'permission_callback' => function() {return true; },
     'callback' => function($data) {
         $username = (isset($data['username'])) ? sanitize_text_field($data['username']) : null;
         $email = (isset($data['email'])) ? sanitize_email($data['email']) : null;
@@ -65,6 +67,7 @@ register_rest_route( SKYE_API_NAMESPACE_V1, '/register-driver', array(
 //driver orders
 register_rest_route( SKYE_API_NAMESPACE_V1, '/driver-orders/(?P<user>.*?)', array(
     'methods' => 'GET',
+            'permission_callback' => function() {return true; },
     'callback' => function($data) {
         $user_id = $data['user'];
         $default_status = array('wc-processing', 'wc-on-hold', 'wc-completed');
@@ -135,6 +138,7 @@ register_rest_route( SKYE_API_NAMESPACE_V1, '/driver-orders/(?P<user>.*?)', arra
 //update order
 register_rest_route( SKYE_API_NAMESPACE_V1, '/update-driver-order/(?P<order_id>.*?)/(?P<user_id>.*?)', array(
     'methods' => 'POST',
+            'permission_callback' => function() {return true; },
     'callback' => function($data) {
         $user_id = $data['user_id'];
         $order_id  = $data['order_id'];
@@ -198,6 +202,7 @@ register_rest_route( SKYE_API_NAMESPACE_V1, '/update-driver-order/(?P<order_id>.
 //update current driver location
 register_rest_route( SKYE_API_NAMESPACE_V1, '/update-driver-location/(?P<user>.*?)', array(
     'methods' => 'POST',
+            'permission_callback' => function() {return true; },
     'callback' => function($data) {
         $user_id = $data['user'];
         $address = isset($data['address']) ? $data['address'] : '';
@@ -240,5 +245,34 @@ register_rest_route( SKYE_API_NAMESPACE_V1, '/update-driver-location/(?P<user>.*
             $return['location'] = $location;
         }
         return $return;
+    }
+));
+
+//driver single order page
+register_rest_route( SKYE_API_NAMESPACE_V1, '/driver-order/(?P<id>.*?)/(?P<user_id>.*?)', array(
+    'methods' => 'GET',
+            'permission_callback' => function() {return true; },
+    'callback' => function($data) {
+        $order_id = $data['id'];
+        $user_id = $data['user_id'];
+        $order = sk_order_info($order_id);
+        if (sk_is_user_driver($user_id)) {
+            if (sk_order_assigned_to_this_driver($order_id, $user_id)) {
+                return $order;
+            } else {
+                return array(
+                    'code' => 'not-assigned',
+                    'message' => 'You are not assigned to this order!',
+                    'data' => null
+                );
+            }
+                
+        } else {
+            return array(
+                'code' => 'order-not-found',
+                'message' => 'Order by this user not found!',
+                'data' => null
+            );
+        }
     }
 ));
