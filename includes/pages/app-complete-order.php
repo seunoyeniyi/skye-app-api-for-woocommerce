@@ -120,14 +120,13 @@ if (!isset($_GET['user'])) {
      //deduct reward discount if applied
      if ($cart['apply_reward']) {
         global $wc_points_rewards;
-
         $discount_code = sprintf( 'wc_points_redemption_%s_%s', $order->get_user_id(), date( 'Y_m_d_h_i', current_time( 'timestamp' ) ) );
         $discount_amount = $cart['reward_discount'];
         if ($discount_amount > 0) {
             $points_redeemed = WC_Points_Rewards_Manager::calculate_points_for_discount($discount_amount);
             WC_Points_Rewards_Manager::decrease_points($order->get_user_id(), $points_redeemed, 'order-redeem', array('discount_code' => $discount_code, 'discount_amount' => $discount_amount), $order->get_id());
             update_post_meta($order->get_id(), '_wc_points_redeemed', $points_redeemed);
-            sk_wc_order_add_discount($order->get_id(), __("Points Redeemed"), $discount_amount);
+            sk_wc_order_add_discount($order, __("Points Redeemed"), $discount_amount);
             //order note
             $order->add_order_note(sprintf(__('%d %s redeemed for a %s discount.', 'wc_points_rewards'), $points_redeemed, $wc_points_rewards->get_points_label($points_redeemed), wc_price($discount_amount)));
             sk_remove_reward($user_id);

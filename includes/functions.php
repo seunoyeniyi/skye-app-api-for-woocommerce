@@ -442,7 +442,7 @@ if (!function_exists('sk_apply_reward')) {
             $cart_json['user_points_value'] = $current_user_points_value; //in price
             //calculate reward discount
             $cart_subtotal = $subtotal; //total items price - $subtotal has been declared at the top
-            $cart_subtotal_points = WC_Points_Rewards_Manager::calculate_points($cart_subtotal);
+            $cart_subtotal_points = WC_Points_Rewards_Manager::calculate_points_for_discount($cart_subtotal); //there is a difference btw calculate_poitns() and calculate_points_for_discount
             if ($current_user_points >= $cart_subtotal_points) {
                 $cart_json['reward_discount_points'] = $cart_subtotal_points;
                 $cart_json['reward_discount'] = WC_Points_Rewards_Manager::calculate_points_value($cart_subtotal_points);
@@ -489,7 +489,7 @@ if (!function_exists('sk_remove_reward')) {
         $cart_json['user_points_value'] = $current_user_points_value; //in price
         //calculate reward discount
         $cart_subtotal = $subtotal; //total items price - $subtotal has been declared at the top
-        $cart_subtotal_points = WC_Points_Rewards_Manager::calculate_points($cart_subtotal);
+        $cart_subtotal_points = WC_Points_Rewards_Manager::calculate_points_for_discount($cart_subtotal); //there is a difference btw calculate_poitns() and calculate_points_for_discount
         if ($current_user_points >= $cart_subtotal_points) {
             $cart_json['reward_discount_points'] = $cart_subtotal_points;
             $cart_json['reward_discount'] = WC_Points_Rewards_Manager::calculate_points_value($cart_subtotal_points);
@@ -667,7 +667,7 @@ if (!function_exists('sk_cart_json_handler')) {
 
                 //calculate reward discount
                 $cart_subtotal = $return_array['subtotal']; //total items price
-                $cart_subtotal_points = WC_Points_Rewards_Manager::calculate_points($cart_subtotal);
+                $cart_subtotal_points = WC_Points_Rewards_Manager::calculate_points_for_discount($cart_subtotal); //there is a difference btw calculate_poitns() and calculate_points_for_discount
                 if ($current_user_points >= $cart_subtotal_points) {
                     $return_array['reward_discount_points'] = $cart_subtotal_points;
                     $return_array['reward_discount'] = WC_Points_Rewards_Manager::calculate_points_value($cart_subtotal_points);
@@ -803,7 +803,7 @@ if (!function_exists('sk_cart_json_handler')) {
             $return_array['user_points_value'] = $current_user_points_value; //in price
             //calculate reward discount
             $cart_subtotal = $subtotal; //total items price - $subtotal has been declared at the top
-            $cart_subtotal_points = WC_Points_Rewards_Manager::calculate_points($cart_subtotal);
+            $cart_subtotal_points = WC_Points_Rewards_Manager::calculate_points_for_discount($cart_subtotal); //there is a difference btw calculate_poitns() and calculate_points_for_discount
             if ($current_user_points >= $cart_subtotal_points) {
                 $return_array['reward_discount_points'] = $cart_subtotal_points;
                 $return_array['reward_discount'] = WC_Points_Rewards_Manager::calculate_points_value($cart_subtotal_points);
@@ -1469,9 +1469,9 @@ if (!function_exists('sk_order_assigned_to_this_driver')) {
 }
 
 if (!function_exists("sk_wc_order_add_discount")) {
-    function sk_wc_order_add_discount($order_id, $title, $amount, $tax_class = '')
+    function sk_wc_order_add_discount($order_object, $title, $amount, $tax_class = '')
     {
-        $order    = wc_get_order($order_id);
+        $order    = $order_object;
         $subtotal = $order->get_subtotal();
         $item     = new WC_Order_Item_Fee();
 
@@ -1517,8 +1517,8 @@ if (!function_exists("sk_wc_order_add_discount")) {
         $item->save();
 
         $order->add_item($item);
-        $order->calculate_totals($has_taxes);
-        $order->save();
+        // $order->calculate_totals($has_taxes);
+        // $order->save();
     }
 }
 

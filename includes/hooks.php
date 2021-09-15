@@ -185,17 +185,3 @@ add_action('wp_head', function() {
 
 
 
-add_action( 'wp_footer', function() {
-    // global $wc_points_rewards;
-    // $order = new WC_Order(376);
-    // $discount_code = WC_Points_Rewards_Discount::get_discount_code();
-    // $discount_amount = 5;
-    // $points_redeemed = WC_Points_Rewards_Manager::calculate_points_for_discount($discount_amount);
-    // WC_Points_Rewards_Manager::decrease_points($order->get_user_id(), $points_redeemed, 'order-redeem', array('discount_code' => $discount_code, 'discount_amount' => $discount_amount), $order->get_id());
-    // update_post_meta($order->get_id(), '_wc_points_redeemed', $points_redeemed);
-    // // add order note
-    // $order->add_order_note(sprintf(__('%d %s redeemed for a %s discount.', 'wc_points_rewards'), $points_redeemed, $wc_points_rewards->get_points_label($points_redeemed), wc_price($discount_amount)));
-    // $order->calculate_totals();
-    // $order->save();
-    // sk_wc_order_add_discount(376, __("Fixed discount"), 12 );
-});

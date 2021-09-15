@@ -615,7 +615,7 @@ add_action( 'rest_api_init', function() {
             $return_array['user_points_value'] = $current_user_points_value; //in price
             //calculate reward discount
             $cart_subtotal = $return_array['subtotal']; //total items price - $subtotal has been declared at the top
-            $cart_subtotal_points = WC_Points_Rewards_Manager::calculate_points($cart_subtotal);
+            $cart_subtotal_points = WC_Points_Rewards_Manager::calculate_points_for_discount($cart_subtotal); //there is a difference btw calculate_poitns() and calculate_points_for_discount
             if ($current_user_points >= $cart_subtotal_points) {
                 $return_array['reward_discount_points'] = $cart_subtotal_points;
                 $return_array['reward_discount'] = WC_Points_Rewards_Manager::calculate_points_value($cart_subtotal_points);
@@ -739,7 +739,7 @@ add_action( 'rest_api_init', function() {
                     $points_redeemed = WC_Points_Rewards_Manager::calculate_points_for_discount($discount_amount);
                     WC_Points_Rewards_Manager::decrease_points($order->get_user_id(), $points_redeemed, 'order-redeem', array('discount_code' => $discount_code, 'discount_amount' => $discount_amount), $order->get_id());
                     update_post_meta($order->get_id(), '_wc_points_redeemed', $points_redeemed);
-                    sk_wc_order_add_discount($order->get_id(), __("Points Redeemed"), $discount_amount);
+                    sk_wc_order_add_discount($order, __("Points Redeemed"), $discount_amount);
                     //order note
                     $order->add_order_note(sprintf(__('%d %s redeemed for a %s discount.', 'wc_points_rewards'), $points_redeemed, $wc_points_rewards->get_points_label($points_redeemed), wc_price($discount_amount)));
                     sk_remove_reward($user_id);
