@@ -396,9 +396,14 @@ if (!function_exists('skye_add_driver_fields_for_packaging')) {
     {
         global $post;
 
-        $meta_field_data = get_post_meta($post->ID, 'skye_order_driver', true) ? get_post_meta($post->ID, 'skye_order_driver', true) : '';
-        $sk_drivers = get_users(array('role' => 'skye_delivery_driver'));
-    ?>
+        //if status is either on-hold or processing
+        $order = new WC_Order($post->ID);
+        if ($order->has_status('completed') || $order->has_status('pending')) {
+            echo "Order " . $order->get_status();
+        } else {
+            $meta_field_data = get_post_meta($post->ID, 'skye_order_driver', true) ? get_post_meta($post->ID, 'skye_order_driver', true) : '';
+            $sk_drivers = get_users(array('role' => 'skye_delivery_driver'));
+        ?>
         <input type="hidden" name="skye_order_meta_field_nonce" value="<?php echo wp_create_nonce(); ?>">
 
             <label>Driver</label> <br>
@@ -408,8 +413,8 @@ if (!function_exists('skye_add_driver_fields_for_packaging')) {
                     <option value="<?php echo $driver->ID; ?>" <?php echo ($driver->ID == $meta_field_data) ? "selected" : ""; ?>><?php echo $driver->display_name; ?></option>
                 <?php } ?>
             </select>
-        
-<?php
+            <?php
+        }
     }
 }
 

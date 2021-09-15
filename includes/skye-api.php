@@ -564,12 +564,38 @@ add_action( 'rest_api_init', function() {
             return json_decode(sk_get_cart_value($user_id), true);
         }
     ));
+    //apply reward discount
+    register_rest_route( SKYE_API_NAMESPACE_V1, '/apply-cart-reward/(?P<user>.*?)', array(
+        'methods' => 'POST',
+            'permission_callback' => function() {return true; },
+        'callback' => function($data) {
+ 
+            $user_id = $data['user'];
+            sk_apply_reward($user_id);
+
+            return json_decode(sk_get_cart_value($user_id), true);
+        }
+    ));
+    //remove reward discount
+    register_rest_route( SKYE_API_NAMESPACE_V1, '/remove-cart-reward/(?P<user>.*?)', array(
+        'methods' => 'POST',
+            'permission_callback' => function() {return true; },
+        'callback' => function($data) {
+ 
+            $user_id = $data['user'];
+            sk_remove_reward($user_id);
+
+            return json_decode(sk_get_cart_value($user_id), true);
+        }
+    ));
 
     //cart info page
     register_rest_route( SKYE_API_NAMESPACE_V1, '/cart/(?P<user>.*?)', array(
         'methods' => 'GET',
             'permission_callback' => function() {return true; },
         'callback' => function($data) {
+            global $wpdb;
+            $cart_table = $wpdb->prefix . "skye_carts";
             $user_id = $data['user']; //user real ID or hash for unknown user
             
             if (!sk_user_cart_exists($user_id)) return array("user-cart-not-exists");
@@ -580,6 +606,31 @@ add_action( 'rest_api_init', function() {
             // $coupon = new WC_Coupon("44gb97sb");
             // return $coupon->get_discount_type();
             // return $coupon->get_amount();
+
+            //RESET REWARDS CALCULATIONS
+        if (class_exists("WC_Points_Rewards_Manager")) {
+            $current_user_points = WC_Points_Rewards_Manager::get_users_points($user_id); //points
+            $current_user_points_value = WC_Points_Rewards_Manager::get_users_points_value($user_id); //price
+            $return_array['user_points'] = $current_user_points;
+            $return_array['user_points_value'] = $current_user_points_value; //in price
+            //calculate reward discount
+            $cart_subtotal = $return_array['subtotal']; //total items price - $subtotal has been declared at the top
+            $cart_subtotal_points = WC_Points_Rewards_Manager::calculate_points($cart_subtotal);
+            if ($current_user_points >= $cart_subtotal_points) {
+                $return_array['reward_discount_points'] = $cart_subtotal_points;
+                $return_array['reward_discount'] = WC_Points_Rewards_Manager::calculate_points_value($cart_subtotal_points);
+            } else {
+                $return_array['reward_discount_points'] = $current_user_points;
+                $return_array['reward_discount'] = $current_user_points_value;
+            }
+            //update in database
+            $wpdb->update($cart_table, array(
+                'cart_value' => json_encode($return_array),
+            ), array(
+                'user' => $user_id
+            ));
+        }
+
             
             
             return $return_array;
@@ -677,6 +728,23 @@ add_action( 'rest_api_init', function() {
             // $item->set_method_id( "amazon_flat_rate:17" );
             $item->set_total( $cart['shipping_cost'] );
             $order->add_item( $item );
+
+            //deduct reward discount if applied
+            if ($cart['apply_reward']) {
+                global $wc_points_rewards;
+
+                $discount_code = sprintf('wc_points_redemption_%s_%s', $order->get_user_id(), date('Y_m_d_h_i', current_time('timestamp')));
+                $discount_amount = $cart['reward_discount'];
+                if ($discount_amount > 0) {
+                    $points_redeemed = WC_Points_Rewards_Manager::calculate_points_for_discount($discount_amount);
+                    WC_Points_Rewards_Manager::decrease_points($order->get_user_id(), $points_redeemed, 'order-redeem', array('discount_code' => $discount_code, 'discount_amount' => $discount_amount), $order->get_id());
+                    update_post_meta($order->get_id(), '_wc_points_redeemed', $points_redeemed);
+                    sk_wc_order_add_discount($order->get_id(), __("Points Redeemed"), $discount_amount);
+                    //order note
+                    $order->add_order_note(sprintf(__('%d %s redeemed for a %s discount.', 'wc_points_rewards'), $points_redeemed, $wc_points_rewards->get_points_label($points_redeemed), wc_price($discount_amount)));
+                    sk_remove_reward($user_id);
+                }
+            }
 
             
             $order->calculate_totals();
@@ -1180,6 +1248,39 @@ add_action( 'rest_api_init', function() {
             return array(
                 'address' => get_the_author_meta( 'tron_wallet', $user_id )
             );
+        }
+    ));
+
+    register_rest_route( SKYE_API_NAMESPACE_V1, "/test-zone", array(
+        'methods' => "GET",
+        'permission_callback' => function() { return true; },
+        'callback' => function($data) {
+
+            //get zone
+            $zone = WC_Shipping_Zones::get_zone_matching_package(array(
+                'destination' => array(
+                    'country' => $data['country'],
+                    'state' => $data['state'],
+                    'postcode' => $data['postcode']
+                )
+            ));
+            $zone_id = $zone->get_id();
+            //get the shipping methods
+
+            $shipping_methods = $zone->get_shipping_methods(true, 'values');
+            $arr = array();
+            $arr['zone_id'] = $zone_id;
+            $arr['zone_name'] = $zone->get_zone_name();
+            $arr['methods'] = array();
+            foreach ($shipping_methods as $method) {
+                $arr['methods'][] = array(
+                    'id' => $method->id,
+                    'title' => $method->method_title,
+                    'cost' => $method->cost,
+                );
+            }
+
+            return $arr;
         }
     ));
 

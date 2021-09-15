@@ -395,10 +395,18 @@ if (!function_exists('sk_update_cart_coupon')) {
         }
         //calculate total
         $cart_json['total'] = ($subtotal + $shipping_cost) - $cart_json['coupon_discount'];
+        //deduct reward discount if applied
+        if ($cart_json['apply_reward']) {
+            $cart_json['total'] -= $cart_json['reward_discount'];
+        }
     } else {
         $cart_json['has_coupon'] = false;
         $cart_json['coupon_discount'] = 0;
         $cart_json['total'] = $cart_json['subtotal'] + $cart_json['shipping_cost'];
+        //deduct reward discount if applied
+        if ($cart_json['apply_reward']) {
+            $cart_json['total'] -= $cart_json['reward_discount'];
+        }
     }
 
     $cart_json['has_shipping'] = (isset($cart_json['has_shipping'])) ? $cart_json['has_shipping'] : false;
@@ -410,6 +418,99 @@ if (!function_exists('sk_update_cart_coupon')) {
     ));
     }
 }
+if (!function_exists('sk_apply_reward')) {
+    function sk_apply_reward($user_id) {
+    global $wpdb;
+    $cart_table = $wpdb->prefix . "skye_carts";
+    //update
+
+    $cart_json = json_decode(sk_get_cart_value($user_id), true);
+    
+    $cart_json['apply_reward'] = true;
+
+    $shipping_cost = $cart_json['shipping_cost'];
+    $subtotal = $cart_json['subtotal'];
+    $coupon_discount = $cart_json['coupon_discount'];
+
+    $reward_discount = 0;
+
+    //RESET REWARDS CALCULATIONS
+        if (class_exists("WC_Points_Rewards_Manager")) {
+            $current_user_points = WC_Points_Rewards_Manager::get_users_points($user_id); //points
+            $current_user_points_value = WC_Points_Rewards_Manager::get_users_points_value($user_id); //price
+            $cart_json['user_points'] = $current_user_points;
+            $cart_json['user_points_value'] = $current_user_points_value; //in price
+            //calculate reward discount
+            $cart_subtotal = $subtotal; //total items price - $subtotal has been declared at the top
+            $cart_subtotal_points = WC_Points_Rewards_Manager::calculate_points($cart_subtotal);
+            if ($current_user_points >= $cart_subtotal_points) {
+                $cart_json['reward_discount_points'] = $cart_subtotal_points;
+                $cart_json['reward_discount'] = WC_Points_Rewards_Manager::calculate_points_value($cart_subtotal_points);
+            } else {
+                $cart_json['reward_discount_points'] = $current_user_points;
+                $cart_json['reward_discount'] = $current_user_points_value;
+            }
+            $reward_discount = $cart_json['reward_discount'];
+        }
+    
+
+    //calculate total
+    $cart_json['total'] = ($subtotal + $shipping_cost) - $coupon_discount - $reward_discount;
+
+
+    return $wpdb->update($cart_table, array(
+        'cart_value' => json_encode($cart_json),
+    ), array(
+        'user' => $user_id
+    ));
+    }
+}
+if (!function_exists('sk_remove_reward')) {
+    function sk_remove_reward($user_id) {
+    global $wpdb;
+    $cart_table = $wpdb->prefix . "skye_carts";
+    //update
+
+    $cart_json = json_decode(sk_get_cart_value($user_id), true);
+    
+    $cart_json['apply_reward'] = false;
+
+    $shipping_cost = $cart_json['shipping_cost'];
+    $subtotal = $cart_json['subtotal'];
+    $coupon_discount = $cart_json['coupon_discount'];
+
+    // $reward_discount = $cart_json['reward_discount'];
+
+    //RESET REWARDS CALCULATIONS
+    if (class_exists("WC_Points_Rewards_Manager")) {
+        $current_user_points = WC_Points_Rewards_Manager::get_users_points($user_id); //points
+        $current_user_points_value = WC_Points_Rewards_Manager::get_users_points_value($user_id); //price
+        $cart_json['user_points'] = $current_user_points;
+        $cart_json['user_points_value'] = $current_user_points_value; //in price
+        //calculate reward discount
+        $cart_subtotal = $subtotal; //total items price - $subtotal has been declared at the top
+        $cart_subtotal_points = WC_Points_Rewards_Manager::calculate_points($cart_subtotal);
+        if ($current_user_points >= $cart_subtotal_points) {
+            $cart_json['reward_discount_points'] = $cart_subtotal_points;
+            $cart_json['reward_discount'] = WC_Points_Rewards_Manager::calculate_points_value($cart_subtotal_points);
+        } else {
+            $cart_json['reward_discount_points'] = $current_user_points;
+            $cart_json['reward_discount'] = $current_user_points_value;
+        }
+    }
+
+    //calculate total
+    $cart_json['total'] = ($subtotal + $shipping_cost) - $coupon_discount; //dont deduct reward discount again
+
+
+    return $wpdb->update($cart_table, array(
+        'cart_value' => json_encode($cart_json),
+    ), array(
+        'user' => $user_id
+    ));
+    }
+}
+
 if (!function_exists('sk_delete_user_cart')) {
     function sk_delete_user_cart($user_id) {
     global $wpdb;
@@ -497,6 +598,7 @@ if (!function_exists('sk_cart_json_handler')) {
     $replace_qty = (isset($data['replace_quantity'])) ? true : false;
 
 
+    
     //setup attributes
     $attributes = $product->get_attributes();
     $return_attributes = array();
@@ -543,6 +645,41 @@ if (!function_exists('sk_cart_json_handler')) {
             // $return_array['discount_total'] = WC()->cart->get_discount_total();
             // $return_array['total'] = WC()->cart->get_total();
             // $return_array['total'] = WC()->cart->total;
+            //add points
+            $return_array['points'] = 0;
+            if (class_exists("WC_Points_Rewards_Manager")) {
+                $return_array['points'] = WC_Points_Rewards_Manager::calculate_points($product->get_price()) * $quantity;
+            }
+            if (!$return_array['points']) $return_array['points'] = 0;
+
+            //setup Points and Rewards discount - default
+            $return_array['apply_reward'] = false;
+            $return_array['user_points'] = 0;
+            $return_array['user_points_value'] = 0;
+            $return_array['reward_discount_points'] = 0; //reward points needed for the discount
+            $return_array['reward_discount'] = 0; //reward price needed for the discount
+
+            if (class_exists("WC_Points_Rewards_Manager")) {
+                $current_user_points = WC_Points_Rewards_Manager::get_users_points($user_id); //points
+                $current_user_points_value = WC_Points_Rewards_Manager::get_users_points_value($user_id); //price
+                $return_array['user_points'] = $current_user_points;
+                $return_array['user_points_value'] = $current_user_points_value; //in price
+
+                //calculate reward discount
+                $cart_subtotal = $return_array['subtotal']; //total items price
+                $cart_subtotal_points = WC_Points_Rewards_Manager::calculate_points($cart_subtotal);
+                if ($current_user_points >= $cart_subtotal_points) {
+                    $return_array['reward_discount_points'] = $cart_subtotal_points;
+                    $return_array['reward_discount'] = WC_Points_Rewards_Manager::calculate_points_value($cart_subtotal_points);
+                } else {
+                    $return_array['reward_discount_points'] = $current_user_points;
+                    $return_array['reward_discount'] = $current_user_points_value;
+                }
+            }
+        
+
+
+
 
         //ITEMS in the cart
         $return_array['items'] = array();
@@ -644,6 +781,39 @@ if (!function_exists('sk_cart_json_handler')) {
         $return_array['total'] = ($subtotal + $shipping_cost) - $coupon_discount;
 
         $return_array['has_shipping'] = (isset($return_array['has_shipping'])) ? $return_array['has_shipping'] : false;
+        //calculate points
+        $points = 0;
+        if (class_exists("WC_Points_Rewards_Manager")) {
+            foreach($return_array['items'] as $item) {
+                $product = wc_get_product($item['ID']);
+                $points += WC_Points_Rewards_Manager::calculate_points($product->get_price() * $item['quantity']);
+            }
+        }
+        
+        $return_array['points'] = $points;
+
+        //setup Points and Rewards discount - update
+        //$return_array is the cart json array
+        $return_array['apply_reward'] = isset($return_array['apply_reward']) ? $return_array['apply_reward'] : false;
+
+        if (class_exists("WC_Points_Rewards_Manager")) {
+            $current_user_points = WC_Points_Rewards_Manager::get_users_points($user_id); //points
+            $current_user_points_value = WC_Points_Rewards_Manager::get_users_points_value($user_id); //price
+            $return_array['user_points'] = $current_user_points;
+            $return_array['user_points_value'] = $current_user_points_value; //in price
+            //calculate reward discount
+            $cart_subtotal = $subtotal; //total items price - $subtotal has been declared at the top
+            $cart_subtotal_points = WC_Points_Rewards_Manager::calculate_points($cart_subtotal);
+            if ($current_user_points >= $cart_subtotal_points) {
+                $return_array['reward_discount_points'] = $cart_subtotal_points;
+                $return_array['reward_discount'] = WC_Points_Rewards_Manager::calculate_points_value($cart_subtotal_points);
+            } else {
+                $return_array['reward_discount_points'] = $current_user_points;
+                $return_array['reward_discount'] = $current_user_points_value;
+            }
+        }
+
+
     }
 
     return $return_array;
@@ -1011,7 +1181,8 @@ if (!function_exists("sk_get_state_code")) {
 }
 
 if (!function_exists("sk_update_cart_shipping")) {
-    function sk_update_cart_shipping($user_id, $country_code, $state_code, $postcode, $provider = "woocommerce", $shipping_provider_cost = 0) {
+    function sk_update_cart_shipping($user_id, $country_code, $state_code, $postcode, $provider = "woocommerce", $shipping_provider_cost = 0)
+    {
         global $wpdb;
         $cart_table = $wpdb->prefix . "skye_carts";
         //update
@@ -1019,60 +1190,60 @@ if (!function_exists("sk_update_cart_shipping")) {
         $cart_json = json_decode(sk_get_cart_value($user_id), true);
 
         if ($provider == "woocommerce") {
-        //get zone
-        $zone = WC_Shipping_Zones::get_zone_matching_package( array(
-            'destination' => array(
-                'country' => $country_code,
-                'state' => $state_code,
-                'postcode' => $postcode
-            )
-        ) );
-        $zone_id = $zone->get_id();
-        //get the shipping methods
-        $shipping_methods = $zone->get_shipping_methods(true, 'values');
-        $cart_json['shipping_methods'] = array();
-        foreach($shipping_methods as $method) {
-            //calculate each product shipping class cost
-            $classes_cost = 0;
-            $items = $cart_json['items'];
-            foreach ($items as $item) {
-                $item_product = wc_get_product($item['ID']);
-                $shipping_class_id = $item_product->get_shipping_class_id();
-                $instance = $method->instance_settings;
+            //get zone
+            $zone = WC_Shipping_Zones::get_zone_matching_package(array(
+                'destination' => array(
+                    'country' => $country_code,
+                    'state' => $state_code,
+                    'postcode' => $postcode
+                )
+            ));
+            $zone_id = $zone->get_id();
+            //get the shipping methods
+            $shipping_methods = $zone->get_shipping_methods(true, 'values');
+            $cart_json['shipping_methods'] = array();
+            foreach ($shipping_methods as $method) {
+                //calculate each product shipping class cost
+                $classes_cost = 0;
+                $items = $cart_json['items'];
+                foreach ($items as $item) {
+                    $item_product = wc_get_product($item['ID']);
+                    $shipping_class_id = $item_product->get_shipping_class_id();
+                    $instance = $method->instance_settings;
 
-                //skip if (type is not set or type != class)
-                if (!isset($method->type)) {
+                    //skip if (type is not set or type != class)
+                    if (!isset($method->type)) {
                         continue;
-                } else {
-                    if ($method->type != "class")
+                    } else {
+                        if ($method->type != "class")
                         continue;
-                }
-                //end of skip
+                    }
+                    //end of skip
 
-                if ($shipping_class_id) {
-                    $unit_cost = $instance['class_cost_' . $shipping_class_id];
-                    $classes_cost += (is_numeric($unit_cost)) ? $unit_cost : 0;
-                } else {
-                    //no class cost
-                    $unit_cost = isset($instance['no_class_cost']) ? $instance['no_class_cost'] : 0;
-                    $classes_cost += (is_numeric($unit_cost)) ? $unit_cost : 0;
+                    if ($shipping_class_id) {
+                        $unit_cost = $instance['class_cost_' . $shipping_class_id];
+                        $classes_cost += (is_numeric($unit_cost)) ? $unit_cost : 0;
+                    } else {
+                        //no class cost
+                        $unit_cost = isset($instance['no_class_cost']) ? $instance['no_class_cost'] : 0;
+                        $classes_cost += (is_numeric($unit_cost)) ? $unit_cost : 0;
+                    }
                 }
+                //add the shipping classes cost to the shipping cost
+                $cart_json['shipping_methods'][$method->id] = array(
+                    'title' => $method->method_title,
+                    'cost' => isset($method->cost) ? ($method->cost + $classes_cost) : $classes_cost,
+                );
             }
-            //add the shipping classes cost to the shipping cost
-            $cart_json['shipping_methods'][$method->id] = array(
-                'title' => $method->method_title,
-                'cost' => isset($method->cost) ? ($method->cost + $classes_cost) : $classes_cost,
-            );
-        }
 
-        $shipping_method = (isset($cart_json['shipping_methods']['flat_rate'])) ? 'flat_rate' : null; //default method else null
-        $cart_json['shipping_method'] = $shipping_method;
-        $cart_json['shipping_cost'] = (!is_null($shipping_method)) ? $cart_json['shipping_methods'][$shipping_method]['cost'] : 0;
-    } else {
-        $cart_json['shipping_method'] = "by_" . $provider;
-        $cart_json['shipping_methods'] = null;
-        $cart_json['shipping_cost'] = $shipping_provider_cost;
-    }
+            $shipping_method = (isset($cart_json['shipping_methods']['flat_rate'])) ? 'flat_rate' : null; //default method else null
+            $cart_json['shipping_method'] = $shipping_method;
+            $cart_json['shipping_cost'] = (!is_null($shipping_method)) ? $cart_json['shipping_methods'][$shipping_method]['cost'] : 0;
+        } else {
+            $cart_json['shipping_method'] = "by_" . $provider;
+            $cart_json['shipping_methods'] = null;
+            $cart_json['shipping_cost'] = $shipping_provider_cost;
+        }
 
 
         //calculate total
@@ -1080,6 +1251,11 @@ if (!function_exists("sk_update_cart_shipping")) {
         $shipping_cost = $cart_json['shipping_cost'];
         $coupon_discount = (isset($cart_json['coupon_discount'])) ? $cart_json['coupon_discount'] : 0;
         $cart_json['total'] = ($subtotal + $shipping_cost) - $coupon_discount;
+
+        //deduct reward discount if applied
+        if ($cart_json['apply_reward']) {
+            $cart_json['total'] -= $cart_json['reward_discount'];
+        }
 
         if ($shipping_cost > 0) {
             $cart_json['has_shipping'] = true;
@@ -1120,13 +1296,17 @@ if (!function_exists("sk_change_cart_shipping_method")) {
                 $method = $shipping_methods[$shipping_method];
                 $cart_json['shipping_method'] = $shipping_method;
                 $cart_json['shipping_cost'] = isset($method['cost']) ? $method['cost'] : 0;
-
             }
         } 
 
         //calculate total
         $shipping_cost = $cart_json['shipping_cost'];
         $cart_json['total'] = ($subtotal + $shipping_cost) - $coupon_discount;
+
+        //deduct reward discount if applied
+        if ($cart_json['apply_reward']) {
+            $cart_json['total'] -= $cart_json['reward_discount'];
+        }
 
         if ($shipping_cost > 0) {
             $cart_json['has_shipping'] = true;
@@ -1288,4 +1468,57 @@ if (!function_exists('sk_order_assigned_to_this_driver')) {
     }
 }
 
+if (!function_exists("sk_wc_order_add_discount")) {
+    function sk_wc_order_add_discount($order_id, $title, $amount, $tax_class = '')
+    {
+        $order    = wc_get_order($order_id);
+        $subtotal = $order->get_subtotal();
+        $item     = new WC_Order_Item_Fee();
+
+        if (strpos($amount, '%') !== false) {
+            $percentage = (float) str_replace(array('%', ' '), array('', ''), $amount);
+            $percentage = $percentage > 100 ? -100 : -$percentage;
+            $discount   = $percentage * $subtotal / 100;
+        } else {
+            $discount = (float) str_replace(' ', '', $amount);
+            $discount = $discount > $subtotal ? -$subtotal : -$discount;
+        }
+
+        $item->set_tax_class($tax_class);
+        $item->set_name($title);
+        $item->set_amount($discount);
+        $item->set_total($discount);
+
+        if ('0' !== $item->get_tax_class() && 'taxable' === $item->get_tax_status() && wc_tax_enabled()) {
+            $tax_for   = array(
+                'country'   => $order->get_shipping_country(),
+                'state'     => $order->get_shipping_state(),
+                'postcode'  => $order->get_shipping_postcode(),
+                'city'      => $order->get_shipping_city(),
+                'tax_class' => $item->get_tax_class(),
+            );
+            $tax_rates = WC_Tax::find_rates($tax_for);
+            $taxes     = WC_Tax::calc_tax($item->get_total(), $tax_rates, false);
+            // print_pr($taxes);
+
+            if (method_exists($item, 'get_subtotal')) {
+                $subtotal_taxes = WC_Tax::calc_tax($item->get_subtotal(), $tax_rates, false);
+                $item->set_taxes(array('total' => $taxes, 'subtotal' => $subtotal_taxes));
+                $item->set_total_tax(array_sum($taxes));
+            } else {
+                $item->set_taxes(array('total' => $taxes));
+                $item->set_total_tax(array_sum($taxes));
+            }
+            $has_taxes = true;
+        } else {
+            $item->set_taxes(false);
+            $has_taxes = false;
+        }
+        $item->save();
+
+        $order->add_item($item);
+        $order->calculate_totals($has_taxes);
+        $order->save();
+    }
+}
 
