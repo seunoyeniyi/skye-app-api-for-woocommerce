@@ -941,6 +941,7 @@ add_action( 'rest_api_init', function() {
                         'ID' => $category->term_id,
                         'name' => $category->name,
                         'slug' => $category->slug,
+                        'image' => wp_get_attachment_url( get_woocommerce_term_meta( $category->term_id, 'thumbnail_id', true ) ),
                         'link' => get_term_link($category->slug, 'product_cat'),
                         'count' => $category->count
                     );
@@ -962,6 +963,7 @@ add_action( 'rest_api_init', function() {
                                 'ID' => $cat->term_id,
                                 'name' => $cat->name,
                                 'slug' => $cat->slug,
+                                'image' => wp_get_attachment_url( get_woocommerce_term_meta( $cat->term_id, 'thumbnail_id', true ) ),
                                 'link' => get_term_link($cat->slug, 'product_cat'),
                                 'count' => $cat->count
                             );
@@ -974,6 +976,7 @@ add_action( 'rest_api_init', function() {
                             'ID' => $category->term_id,
                             'name' => $category->name,
                             'slug' => $category->slug,
+                            'image' => wp_get_attachment_url( get_woocommerce_term_meta( $category->term_id, 'thumbnail_id', true ) ),
                             'link' => get_term_link($category->slug, 'product_cat'),
                             'count' => $category->count
                             
@@ -996,6 +999,7 @@ add_action( 'rest_api_init', function() {
                                     'ID' => $cat->term_id,
                                     'name' => $cat->name,
                                     'slug' => $cat->slug,
+                                    'image' => wp_get_attachment_url( get_woocommerce_term_meta( $cat->term_id, 'thumbnail_id', true ) ),
                                     'link' => get_term_link($cat->slug, 'product_cat'),
                                     'count' => $cat->count
                                 );
