@@ -838,6 +838,7 @@ add_action( 'rest_api_init', function() {
             $order_id  = $data['order_id'];
             $status  = isset($data['status']) ? sanitize_text_field($data['status']) : null;
             $order_note  = isset($data['order_note']) ? sanitize_text_field($data['order_note']) : 'Updated from API';
+            $paypal_payment_id = (isset($data['paypal_payment_id'])) ? $data['paypal_payment_id'] : null;
             $return_array = array();
             //to add address to url: url?billing_address%Bfirst_name%5D=SEUN&billing_address%5Blast_name%5D=OYENIYI....
             //%5B is to select variable array with they key eg: address%5Bfirst_name
@@ -901,9 +902,17 @@ add_action( 'rest_api_init', function() {
                 }
                 $return_array['custom_field_updated'] = true;
             }
+            //for paypal
+            if (!is_null($paypal_payment_id)) {
+                update_post_meta($order_id, 'sk_paypal_payment_id', $paypal_payment_id);
+                update_post_meta($order_id, '_transaction_id', $paypal_payment_id);
+            }
 
             //order info
             $return_array['order_info'] = sk_order_info($order_id);
+
+            //clear cart if set
+            if (isset($data['clear_cart'])) sk_delete_user_cart($user_id);
 
             return $return_array;
         }
@@ -917,6 +926,7 @@ add_action( 'rest_api_init', function() {
             $hide_empty = (isset($data['hide_empty'])) ? 1 : 0;
             $order_by = (isset($data['order_by'])) ? $data['order_by'] : null;
             $with_uncategory = (isset($data['with_uncategory'])) ? true : false;
+            // $per_page = (isset($data['per_page'])) ? $data['per_page'] : '';
 
 
             $array_return = array();
@@ -1055,15 +1065,6 @@ add_action( 'rest_api_init', function() {
                 function treat($s) {
                                     $s = strtolower($s);
                 					$s = sanitize_title($s);
-                					if (substr($s, -3)  == "-kg") {
-                						$s = str_replace('-kg', 'kg', $s);
-                					}
-                					if (substr($s, -3)  == "-ml") {
-                						$s = str_replace('-ml', 'ml', $s);
-                					}
-                					if (substr($s, -2)  == "-g") {
-                						$s = str_replace('-g', 'g', $s);
-                					}
                 					return $s;
                                 }
                 $product_id = $data['product_id'];

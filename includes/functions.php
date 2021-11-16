@@ -906,6 +906,7 @@ if (!function_exists('sk_order_info')) {
 
         $return_array['skye_delivery_status'] = $order->get_meta('skye_order_delivery_status');
         $return_array['skye_driver_location'] = $order->get_meta('skye_order_driver_location');
+        $return_array['sk_paypal_payment_id'] = $order->get_meta('sk_paypal_payment_id');
 
         // Get Order Shipping
         $return_array['shipping_method'] = $order->get_shipping_method();
@@ -1230,9 +1231,11 @@ if (!function_exists("sk_update_cart_shipping")) {
                     }
                 }
                 //add the shipping classes cost to the shipping cost
+                
+				$method_cost = is_numeric($method->cost) ? $method->cost : 0;
                 $cart_json['shipping_methods'][$method->id] = array(
                     'title' => $method->method_title,
-                    'cost' => isset($method->cost) ? ($method->cost + $classes_cost) : $classes_cost,
+                    'cost' => isset($method->cost) ? ($method_cost + $classes_cost) : $classes_cost,
                 );
             }
 
