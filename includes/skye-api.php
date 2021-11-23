@@ -442,8 +442,15 @@ add_action( 'rest_api_init', function() {
                 's' => $search,
             );
             if (isset($data['meta_key'])) $query_args['meta_key'] = $data['meta_key'];
-            if (isset($data['orderby'])) $query_args['orderby'] = $data['orderby'];
+            if (isset($data['orderby'])) {
+                $query_args['orderby'] = $data['orderby'];
+                if ($data['orderby'] == "popularity") {
+                    $query_args['orderby'] = 'meta_value_num';
+                    $query_args['meta_key'] = 'total_sales';
+                }
+            }
             if (isset($data['order'])) $query_args['order'] = $data['order'];
+            
             if (isset($data['price_range'])) { 
                 $price_btw = explode('|', $data['price_range']);
                 $query_args['meta_query'] = array(
@@ -454,6 +461,17 @@ add_action( 'rest_api_init', function() {
                         'type' => 'NUMERIC'
                     )
                 );
+            }
+            if (isset($data['brand'])) {
+                if (taxonomy_exists('product_brand')) {
+                    $query_args['tax_query'] = array(
+                        array(
+                            'taxonomy'  => 'product_brand', // Woocommerce product category taxonomy
+                            'field'     => 'slug', // can be: 'name', 'slug' or 'term_id'
+                            'terms'     => array($data['brand']),
+                        )
+                    );
+                }
             }
             // 			for featured products
 			if (isset($data['featured'])) { 
@@ -466,8 +484,9 @@ add_action( 'rest_api_init', function() {
                 );
             }
             
-            $query = new WP_Query($query_args);
+
             
+            $query = new WP_Query($query_args);
 
             if (!$query->have_posts())
             return null;
@@ -477,8 +496,16 @@ add_action( 'rest_api_init', function() {
             while($query->have_posts()) {
                 $query->the_post();
                 $product_array["results"][] = sk_get_simple_product_array(get_the_ID(), isset($data['user_id']) ? $data['user_id'] : null);
-                }
+            }
     
+            //add brand key (if site has brand taxonomy)
+            if (taxonomy_exists('product_brand')) {
+                $brands = get_terms( 'product_brand', array(
+                    'orderby'  => 'name'
+                ) );
+                $product_array['brands'] = $brands;
+            }
+
             // add pagination
             $product_array['paged'] = $paged;
             $product_array['pagination'] = sk_numeric_pagination($query, $data);
