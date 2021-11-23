@@ -503,6 +503,7 @@ add_action( 'rest_api_init', function() {
                 $brands = get_terms( 'product_brand', array(
                     'orderby'  => 'name'
                 ) );
+                $brands = array_values($brands); //reset $brands back to array
                 $product_array['brands'] = $brands;
             }
 
