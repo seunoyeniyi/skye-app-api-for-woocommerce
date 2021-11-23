@@ -468,7 +468,7 @@ add_action( 'rest_api_init', function() {
                         array(
                             'taxonomy'  => 'product_brand', // Woocommerce product category taxonomy
                             'field'     => 'slug', // can be: 'name', 'slug' or 'term_id'
-                            'terms'     => array($data['brand']),
+                            'terms'     => explode(',', $data['brand']),
                         )
                     );
                 }
