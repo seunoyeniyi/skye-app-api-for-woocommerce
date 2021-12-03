@@ -103,6 +103,9 @@ if (!function_exists('sk_get_product_array')) {
         'virtual' => $product->get_virtual(),
         'permalink' => get_permalink($product->get_id()),
 
+        'in_stock' => $product->is_in_stock(),
+		'stock_status' => $product->get_stock_status(),
+
         // Product prices
         'price' => $product->get_price(),
         'regular_price' => $product->get_regular_price(),
@@ -245,6 +248,10 @@ if (!function_exists('sk_get_simple_product_array')) {
         // 'menu_order' => $product->get_menu_order(),
         // 'virtual' => $product->get_virtual(),
         // 'permalink' => get_permalink($product->get_id()),
+
+        'stock_status' => $product->get_stock_status(),
+
+        
 
         // Product prices
         'price' => $product->get_price(),
