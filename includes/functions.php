@@ -102,8 +102,8 @@ if (!function_exists('sk_get_product_array')) {
         'menu_order' => $product->get_menu_order(),
         'virtual' => $product->get_virtual(),
         'permalink' => get_permalink($product->get_id()),
-
-        'in_stock' => $product->is_in_stock(),
+		
+		'in_stock' => $product->is_in_stock(),
 		'stock_status' => $product->get_stock_status(),
 
         // Product prices
@@ -248,10 +248,9 @@ if (!function_exists('sk_get_simple_product_array')) {
         // 'menu_order' => $product->get_menu_order(),
         // 'virtual' => $product->get_virtual(),
         // 'permalink' => get_permalink($product->get_id()),
-
-        'stock_status' => $product->get_stock_status(),
-
+        // 
         
+		'stock_status' => $product->get_stock_status(),
 
         // Product prices
         'price' => $product->get_price(),
@@ -1191,6 +1190,7 @@ if (!function_exists("sk_get_state_code")) {
 if (!function_exists("sk_update_cart_shipping")) {
     function sk_update_cart_shipping($user_id, $country_code, $state_code, $postcode, $provider = "woocommerce", $shipping_provider_cost = 0)
     {
+		
         global $wpdb;
         $cart_table = $wpdb->prefix . "skye_carts";
         //update
@@ -1209,6 +1209,7 @@ if (!function_exists("sk_update_cart_shipping")) {
             $zone_id = $zone->get_id();
             //get the shipping methods
             $shipping_methods = $zone->get_shipping_methods(true, 'values');
+			//die(print_r($shipping_methods));
             $cart_json['shipping_methods'] = array();
             foreach ($shipping_methods as $method) {
                 //calculate each product shipping class cost
@@ -1240,10 +1241,24 @@ if (!function_exists("sk_update_cart_shipping")) {
                 //add the shipping classes cost to the shipping cost
                 
 				$method_cost = is_numeric($method->cost) ? $method->cost : 0;
-                $cart_json['shipping_methods'][$method->id] = array(
-                    'title' => $method->method_title,
-                    'cost' => isset($method->cost) ? ($method_cost + $classes_cost) : $classes_cost,
-                );
+				if ($method->id == "free_shipping") {
+					if ($method->requires == "min_amount") {
+						if ($cart_json["subtotal"] >= $method->min_amount) {
+							$cart_json['shipping_methods'][$method->id] = array(
+                    			'title' => $method->method_title,
+                    			'cost' => isset($method->cost) ? ($method_cost + $classes_cost) : $classes_cost,
+								'id' => $method->id,
+                			);
+						}
+					}
+				} else {
+					$cart_json['shipping_methods'][$method->id] = array(
+                    	'title' => $method->method_title,
+                    	'cost' => isset($method->cost) ? ($method_cost + $classes_cost) : $classes_cost,
+						'id' => $method->id,
+                	);
+				}
+                
             }
 
             $shipping_method = (isset($cart_json['shipping_methods']['flat_rate'])) ? 'flat_rate' : null; //default method else null
@@ -1318,7 +1333,7 @@ if (!function_exists("sk_change_cart_shipping_method")) {
             $cart_json['total'] -= $cart_json['reward_discount'];
         }
 
-        if ($shipping_cost > 0) {
+        if ($shipping_cost > 0 || $cart_json['shipping_method'] == "free_shipping") {
             $cart_json['has_shipping'] = true;
         } else {
             $cart_json['has_shipping'] = false;
