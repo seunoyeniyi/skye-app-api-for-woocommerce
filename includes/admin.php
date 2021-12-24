@@ -121,11 +121,78 @@ function skye_app_banners_form_meta_box_handler($item)
                     <label for="description"><?php _e('Description', 'cltd_example') ?></label>
                 </th>
                 <td>
-                    <textarea id="d" name="description" style="width: 95%" size="50" class="code" placeholder="<?php _e('Description', 'cltd_example') ?>" required><?php echo esc_attr($item['description']) ?></textarea>
+                    <textarea id="d" name="description" style="width: 95%" size="50" class="code" placeholder="<?php _e('Description', 'cltd_example') ?>"><?php echo esc_attr($item['description']) ?></textarea>
+                </td>
+            </tr>
+            <tr class="form-field">
+                <th valign="top" scope="row">
+                    <label for="on-click-to"><?php _e('On Click to', 'cltd_example') ?></label>
+                </th>
+                <td>
+                    <select id="on-click-to" name="on_click_to" style="width: 95%" class="code">
+                    <option value="none" <?php echo ($item['on_click_to'] == "none") ? "selected":""; ?>>None</option>
+						<option value="shop" <?php echo ($item['on_click_to'] == "shop") ? "selected":""; ?>>Shop</option>
+						<option value="category" <?php echo ($item['on_click_to'] == "category") ? "selected":""; ?>>Category</option>
+						<option value="url" <?php echo ($item['on_click_to'] == "url") ? "selected":""; ?>>URL</option>
+					</select>
+                </td>
+            </tr>
+            <tr class="form-field" id="categories-row" style="display: <?php echo ($item['on_click_to'] == "category") ? "dull":"none"; ?>;">
+                <th valign="top" scope="row">
+                    <label for="categories"><?php _e('Categories', 'cltd_example') ?></label>
+                </th>
+                <td>
+                    <select id="categories" name="category" style="width: 95%"  class="code" required>
+						<?php
+
+                            $categories = get_categories( array(
+                                'taxonomy' => 'product_cat',
+                                'orderby' => 'menu_order',
+                                'show_count' => 1,
+                                'pad_counts' => 1,
+                                'hierarchical' => 1,
+                                'title_li' => '',
+                                'hide_empty' => 0,
+                            ) );
+                            
+                            foreach ($categories as $category) { ?>
+                                <option value="<?php echo $category->slug; ?>" <?php echo ($item['category'] == $category->slug) ? "selected":""; ?>><?php echo $category->name; ?></option>
+                           <?php }
+
+                         ?>
+					</select>
+                </td>
+            </tr>
+            <tr class="form-field" id="url-row" style="display: <?php echo ($item['on_click_to'] == "url") ? "dull":"none"; ?>;">
+                <th valign="top" scope="row">
+                    <label for="url"><?php _e('URL', 'cltd_example') ?></label>
+                </th>
+                <td>
+                    <input type="url" id="url" name="url" style="width: 95%"  class="code" placeholder="URL" value="<?php echo $item['url']; ?>">
                 </td>
             </tr>
         </tbody>
     </table>
+
+    <script>
+        jQuery(document).ready(function($) {
+            $("#on-click-to").change(function(e) {
+                var selected = e.target.value;
+                if (selected == "category") {
+                    $("#categories-row").show();
+                    $("#url-row").hide();
+                } else if (selected == "url") {
+                    $("#categories-row").hide();
+                    $("#url-row").show();
+                } else {
+                    $("#categories-row").hide();
+                    $("#url-row").hide();
+                }
+            });
+        });
+    </script>
+
+
     <?php
 }
 

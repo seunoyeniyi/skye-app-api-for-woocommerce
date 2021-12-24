@@ -13,6 +13,7 @@
         'image' => '',
         'title' => '',
         'description' => null,
+        'category' => null,
         'on_click_to' => null,
         'url' => null,
     );
