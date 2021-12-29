@@ -111,9 +111,29 @@ function skye_update_custom_roles()
 add_action('init', 'skye_update_custom_roles');
 
 
-// FOR WEB PAYMENT
+// FOR WEB PAYMENT and BROWSER
 add_action('init', function () {
 
+    //for general browser
+    if (isset($_GET['in_sk_app'])) {
+        setcookie("SK_IN_APP", "1", time() + (86400 * 360), "/"); // 86400 = 1 day
+        if (!session_id()) {
+            session_start();
+        }
+        $_SESSION["SK_IN_APP"] = "1";
+
+        //to hide some elements
+        if (isset($_GET['hide_elements'])) {
+            $elements = str_replace("*", "#", $_GET['hide_elements']);
+            setcookie("HIDE_ELEMENTS", $elements, time() + (86400 * 360), "/"); // 86400 = 1 day
+            if (!session_id()) {
+                session_start();
+            }
+            $_SESSION["HIDE_ELEMENTS"] = $elements;
+        }
+    }
+
+    //for payment with user id
     if (isset($_GET["sk-user-checkout"]) && isset($_GET['sk-web-payment'])) {
         $user_id = $_GET["sk-user-checkout"];
         if (sk_user_exists($user_id)) {
@@ -124,6 +144,22 @@ add_action('init', function () {
                 wp_set_current_user($user_id, $user->user_login);
                 wp_set_auth_cookie($user_id, true);
                 do_action('wp_login', $user->user_login, $user);
+                setcookie("SK_IN_APP", "1", time() + (86400 * 360), "/"); // 86400 = 1 day
+                if (!session_id()) {
+                    session_start();
+                }
+                $_SESSION["SK_IN_APP"] = "1";
+
+                //to hide some elements
+                if (isset($_GET['hide_elements'])) {
+                    $elements = str_replace("*", "#", $_GET['hide_elements']);
+                    setcookie("HIDE_ELEMENTS", $elements, time() + (86400 * 360), "/"); // 86400 = 1 day
+                    if (!session_id()) {
+                        session_start();
+                    }
+                    $_SESSION["HIDE_ELEMENTS"] = $elements;
+                }
+
                 // clear cart in the browser first
                 // WC()->cart->empty_cart();
         ?>
@@ -140,43 +176,15 @@ add_action('init', function () {
 add_action('wp_enqueue_scripts', 'ava_test_init');
 function ava_test_init()
 {
-    if (isset($_GET["sk-user-checkout"]) && isset($_GET["sk-stripe-checkout"]) && isset($_GET["pay_for_order"])) { //for stripe payment
-        wp_enqueue_style('slider', plugin_dir_url(__FILE__) . 'stripe-style.css', false, '1.1', 'all');
-        wp_enqueue_script('sk-js', plugins_url('/stripe-script.js', __FILE__));
-    } else if (isset($_GET["sk-user-checkout"]) && isset($_GET['sk-web-payment'])) { //for general payment
-        wp_enqueue_style('slider', plugin_dir_url(__FILE__) . 'style.css', false, '1.1', 'all');
-        wp_enqueue_script('sk-js', plugins_url('/script.js', __FILE__));
+    if ((isset($_GET["sk-user-checkout"]) && isset($_GET["pay_for_order"])) || in_sk_app() || isset($_GET['in_sk_app'])) {
+        wp_enqueue_style('slider', plugin_dir_url(__FILE__) . 'in-app-style.css', false, '1.1', 'all');
+        wp_enqueue_script('sk-js', plugins_url('/in-app-script.js', __FILE__));
     }
 }
 
-//for in app browser
+//for in app browser css
 add_action('wp_head', function () {
-    if (isset($_GET["sk-user-checkout"]) && isset($_GET["sk-stripe-checkout"]) && isset($_GET["pay_for_order"])) { //for stripe payment and browser
-        ?>
-        <style>
-            header,
-            #masthead,
-            div.storefront-breadcrumb,
-            footer,
-            aside,
-            div.woocommerce-form-coupon-toggle,
-            div.storefront-handheld-footer-bar,
-            #glt-translate-trigger {
-                display: none;
-            }
-
-            div.payment_box.payment_method_stripe,
-            div.payment_box.payment_method_stripe {
-                display: block;
-            }
-
-            ul.wc_payment_methods> :not(li.payment_method_stripe),
-            ul.payment_methods methods> :not(li.payment_method_stripe) {
-                display: none;
-            }
-        </style>
-    <?php
-    } else if (isset($_GET["sk-user-checkout"]) && isset($_GET['sk-web-payment'])) { //for general payment
+    if ((isset($_GET["sk-user-checkout"]) && isset($_GET["pay_for_order"])) || in_sk_app() || isset($_GET['in_sk_app'])) {
     ?>
         <style>
             header,
@@ -188,9 +196,67 @@ add_action('wp_head', function () {
             #glt-translate-trigger {
                 display: none;
             }
+            /* FOR CUSTOM elements to hide, for #id use *id */
+            <?php 
+            if (isset($_GET['hide_elements'])) {
+                $elements = str_replace("*", "#", $_GET['hide_elements']);
+                echo $elements . " {";
+                echo "display: none;";
+                echo "}";
+            } elseif (isset($_COOKIE['HIDE_ELEMENTS'])) {
+                $elements = str_replace("*", "#", $_COOKIE['HIDE_ELEMENTS']);
+                echo $elements . " {";
+                echo "display: none;";
+                echo "}";
+            }
+
+            ?>
+
         </style>
     <?php
     }
+});
+//for in app browser javascript
+add_action('wp_footer', function () {
+    if ((isset($_GET["sk-user-checkout"]) && isset($_GET["pay_for_order"])) || in_sk_app() || isset($_GET['in_sk_app'])) {
+        ?>
+            <script>
+              jQuery(document).ready(function ($) {
+                    $('header, #masthead').hide();
+                    $('div.storefront-breadcrumb').hide();
+                    $("footer").hide();
+                    $("aside").hide();
+                    $("nav.woocommerce-breadcrumb").hide();
+                    $("div.storefront-handheld-footer-bar").hide();
+                    $("#glt-translate-trigger").hide();
+
+                    /* FOR CUSTOM elements to hide, for #id use *id */
+                    <?php if (isset($_GET['hide_elements'])) { $elements = str_replace("*", "#", $_GET['hide_elements']);
+                         ?>
+                        $("<?php echo $elements; ?>").hide();
+                    <?php } elseif (isset($_SESSION['HIDE_ELEMENTS'])) { $elements = str_replace("*", "#", $_SESSION['HIDE_ELEMENTS']);
+                         ?>
+                        $("<?php echo $elements; ?>").hide();
+                    <?php } ?> ?>
+
+                    setInterval(() => {
+                        $("div.storefront-handheld-footer-bar").hide();
+                        $("#glt-translate-trigger").hide();
+                        /* FOR CUSTOM elements to hide, for #id use *id */
+                    <?php if (isset($_GET['hide_elements'])) { $elements = str_replace("*", "#", $_GET['hide_elements']);
+                         ?>
+                        $("<?php echo $elements; ?>").hide();
+                    <?php } elseif (isset($_SESSION['HIDE_ELEMENTS'])) { $elements = str_replace("*", "#", $_SESSION['HIDE_ELEMENTS']);
+                         ?>
+                        $("<?php echo $elements; ?>").hide();
+                    <?php } ?> ?>
+
+                    }, 1000);
+                    
+                });
+            </script>
+        <?php
+        }
 });
 
 //ORDER COMPLETING PAGE

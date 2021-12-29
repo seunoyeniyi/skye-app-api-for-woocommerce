@@ -1,0 +1,10 @@
+
+header,
+#masthead,
+div.storefront-breadcrumb,
+footer,
+aside,
+div.storefront-handheld-footer-bar,
+#glt-translate-trigger {
+    display: none;
+}

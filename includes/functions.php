@@ -1548,3 +1548,12 @@ if (!function_exists("sk_wc_order_add_discount")) {
     }
 }
 
+if (!function_exists('in_sk_app')) {
+    function in_sk_app() {
+        if (isset($_COOKIE['SK_IN_APP']) || isset($_SESSION['SK_IN_APP'])) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+}
