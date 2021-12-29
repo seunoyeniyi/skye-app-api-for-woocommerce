@@ -1235,7 +1235,9 @@ add_action( 'rest_api_init', function() {
             'permission_callback' => function() {return true; },
         'callback' => function($data) {
             $user_id =  $data['user_id'];
-            return sk_wishlist_products($user_id, $data);
+            $hide_description = isset($data['hide_description']);
+
+            return sk_wishlist_products($user_id, $data, $hide_description);
         }
     ));
     register_rest_route( SKYE_API_NAMESPACE_V1, '/add-to-wishlist/(?P<user_id>.*?)/(?P<product_id>.*?)', array(
