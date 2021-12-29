@@ -437,7 +437,7 @@ add_action( 'rest_api_init', function() {
             $post_in = isset($data['ids']) ? explode(',', rtrim($data['ids'], ',')) : null;
             $search = isset($data['search']) ? $data['search'] : null;
 			$tag = isset($data['tag']) ? $data['tag'] : null;
-			$show_description = isset($data['show_description']);
+			$hide_description = isset($data['hide_description']);
 
             $query_args = array(
                 'post_type' => 'product',
@@ -504,7 +504,7 @@ add_action( 'rest_api_init', function() {
             
             while($query->have_posts()) {
                 $query->the_post();
-                $product_array["results"][] = sk_get_simple_product_array(get_the_ID(), isset($data['user_id']) ? $data['user_id'] : null, $show_description);
+                $product_array["results"][] = sk_get_simple_product_array(get_the_ID(), isset($data['user_id']) ? $data['user_id'] : null, $hide_description);
             }
     
             //add brand key (if site has brand taxonomy)
