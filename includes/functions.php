@@ -154,6 +154,7 @@ if (!function_exists('sk_get_product_array')) {
         'image' => wp_get_attachment_url($product->get_image_id()),
         // 'image2' => $product->get_image(), //return html image
         'gallery_image_ids' => $product->get_gallery_image_ids(),
+		'gallery_images' => array_map('wp_get_attachment_url', $product->get_gallery_image_ids()),
 
         //Product Reviews
         'reviews_allowed' => $product->get_reviews_allowed(),

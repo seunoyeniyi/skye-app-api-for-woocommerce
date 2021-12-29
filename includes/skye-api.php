@@ -368,6 +368,7 @@ add_action( 'rest_api_init', function() {
             $product_cat = isset($data['cat']) ? $data['cat'] : null;
             $post_in = isset($data['ids']) ? explode(',', rtrim($data['ids'], ',')) : null;
             $search = isset($data['search']) ? $data['search'] : null;
+			$tag = isset($data['tag']) ? $data['tag'] : null;
 
             $query_args = array(
                 'post_type' => 'product',
@@ -377,6 +378,9 @@ add_action( 'rest_api_init', function() {
                 'post__in' => $post_in,
                 's' => $search,
             );
+			if (!is_null($tag)) {
+				$query_args["product_tag"] = $tag;
+			}
             if (isset($data['meta_key'])) $query_args['meta_key'] = $data['meta_key'];
             if (isset($data['orderby'])) $query_args['orderby'] = $data['orderby'];
             if (isset($data['order'])) $query_args['order'] = $data['order'];
@@ -432,6 +436,7 @@ add_action( 'rest_api_init', function() {
             $product_cat = isset($data['cat']) ? $data['cat'] : null;
             $post_in = isset($data['ids']) ? explode(',', rtrim($data['ids'], ',')) : null;
             $search = isset($data['search']) ? $data['search'] : null;
+			$tag = isset($data['tag']) ? $data['tag'] : null;
 
             $query_args = array(
                 'post_type' => 'product',
@@ -441,6 +446,9 @@ add_action( 'rest_api_init', function() {
                 'post__in' => $post_in,
                 's' => $search,
             );
+			if (!is_null($tag)) {
+				$query_args["product_tag"] = $tag;
+			}
             if (isset($data['meta_key'])) $query_args['meta_key'] = $data['meta_key'];
             if (isset($data['orderby'])) {
                 $query_args['orderby'] = $data['orderby'];
@@ -1080,6 +1088,7 @@ add_action( 'rest_api_init', function() {
                 $array_return[] = array(
                         'ID' => $tag->term_id,
                         'name' => $tag->name,
+						'slug' => $tag->slug,
                         'link' => get_term_link($tag->slug, 'product_tag'),
                         'count' => $tag->count
                 );
