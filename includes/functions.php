@@ -166,7 +166,7 @@ if (!function_exists('sk_get_product_array')) {
     }
 }
 if (!function_exists('sk_get_simple_product_array')) {
-    function sk_get_simple_product_array($product_id, $user_id = null, $hide_description = true) {
+    function sk_get_simple_product_array($product_id, $user_id = null, $hide_description = false) {
     $product = wc_get_product($product_id);
 
     //categories
@@ -1407,7 +1407,7 @@ if (!function_exists("sk_get_wishlist")) {
     }
 }
 if (!function_exists("sk_wishlist_products")) {
-    function sk_wishlist_products($user_id, $data) {
+    function sk_wishlist_products($user_id, $data, $hide_description = false) {
 
         $paged = isset($data['paged']) ? $data['paged'] : 1;
         $post_per_page = isset($data['per_page']) ? $data['per_page'] : 20;
@@ -1460,7 +1460,7 @@ if (!function_exists("sk_wishlist_products")) {
         
         while($query->have_posts()) {
             $query->the_post();
-            $product_array["results"][] = sk_get_simple_product_array(get_the_ID(), $user_id);
+            $product_array["results"][] = sk_get_simple_product_array(get_the_ID(), $user_id, $hide_description);
             }
 
         // add pagination
