@@ -166,7 +166,7 @@ if (!function_exists('sk_get_product_array')) {
     }
 }
 if (!function_exists('sk_get_simple_product_array')) {
-    function sk_get_simple_product_array($product_id, $user_id = null) {
+    function sk_get_simple_product_array($product_id, $user_id = null, $show_description = true) {
     $product = wc_get_product($product_id);
 
     //categories
@@ -244,7 +244,7 @@ if (!function_exists('sk_get_simple_product_array')) {
         'status' => $product->get_status(),
         // 'featured' => $product->get_featured(),
         // 'catalog_visibility' => $product->get_catalog_visibility(),
-        'description' => $product->get_description(),
+        'description' => ($show_description) ? $product->get_description() : "",
         // 'sku' => $product->get_sku(),
         // 'menu_order' => $product->get_menu_order(),
         // 'virtual' => $product->get_virtual(),
