@@ -24,3 +24,4 @@ include(plugin_dir_path( __FILE__ ) . 'includes/skye-api.php');
 include(plugin_dir_path( __FILE__ ) . 'includes/hooks.php');
 
 register_activation_hook( __FILE__, 'skye_activated');
+remove_action( 'shutdown', 'wp_ob_end_flush_all', 1 );

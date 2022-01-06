@@ -237,7 +237,7 @@ add_action('wp_footer', function () {
                     <?php } elseif (isset($_SESSION['HIDE_ELEMENTS'])) { $elements = str_replace("*", "#", $_SESSION['HIDE_ELEMENTS']);
                          ?>
                         $("<?php echo $elements; ?>").hide();
-                    <?php } ?> ?>
+                    <?php } ?> 
 
                     setInterval(() => {
                         $("div.storefront-handheld-footer-bar").hide();
@@ -249,7 +249,7 @@ add_action('wp_footer', function () {
                     <?php } elseif (isset($_SESSION['HIDE_ELEMENTS'])) { $elements = str_replace("*", "#", $_SESSION['HIDE_ELEMENTS']);
                          ?>
                         $("<?php echo $elements; ?>").hide();
-                    <?php } ?> ?>
+                    <?php } ?> 
 
                     }, 1000);
                     
@@ -359,3 +359,23 @@ function sk_save_category_icon_fileds( $term_id ) {
 }
 add_action ( 'created_product_cat', 'sk_save_category_icon_fileds' );
 add_action ( 'edited_product_cat', 'sk_save_category_icon_fileds' );
+
+
+
+
+
+add_action('woocommerce_thankyou', 'sk_app_thankyou', 10, 1);
+function sk_app_thankyou(){ if (in_sk_app()) {  ?>
+	<script>
+        (function() {
+            SkyeApp.orderPlaced();
+        })();
+    </script>
+    <!-- must be seperated because the android method may raise error for iOS  -->
+    <script>
+        (function() {
+            webkit.messageHandlers.skyeHandler.postMessage("any");
+        })();
+    </script>
+<?php } }
+

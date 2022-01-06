@@ -109,6 +109,8 @@ if (!function_exists('sk_get_product_array')) {
         // Product prices
         'price' => $product->get_price(),
         'regular_price' => $product->get_regular_price(),
+        'lowest_variation_price' => ($product->get_type() == "variable") ? $product->get_variation_price( 'min', true ) : $product->get_price(),
+        'highest_variation_price' => ($product->get_type() == "variable") ? $product->get_variation_price( 'max', true ) : $product->get_price(),
         'sale_price' => $product->get_sale_price(),
         'date_on_sale_from' => $product->get_date_on_sale_from(),
         'date_on_sale_to' => $product->get_date_on_sale_to(),
@@ -256,6 +258,8 @@ if (!function_exists('sk_get_simple_product_array')) {
         // Product prices
         'price' => $product->get_price(),
         'regular_price' => $product->get_regular_price(),
+        'lowest_variation_price' => ($product->get_type() == "variable") ? $product->get_variation_price( 'min', true ) : $product->get_price(),
+        'highest_variation_price' => ($product->get_type() == "variable") ? $product->get_variation_price( 'max', true ) : $product->get_price(),
         // 'sale_price' => $product->get_sale_price(),
         // 'date_on_sale_from' => $product->get_date_on_sale_from(),
         // 'date_on_sale_to' => $product->get_date_on_sale_to(),
