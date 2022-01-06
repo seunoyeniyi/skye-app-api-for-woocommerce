@@ -11,21 +11,32 @@ add_action( 'rest_api_init', function() {
                 $arr['wpurl'] = get_bloginfo('wpurl'); // – The WordPress address (URL) (set in Settings > General)
                 $arr['url'] = get_bloginfo('url'); // – The Site address (URL) (set in Settings > General)
                 $arr['admin_email'] = get_bloginfo('admin_email'); // – Admin email (set in Settings > General)
-                $arr['charset'] = get_bloginfo('charset'); // – The "Encoding for pages and feeds" (set in Settings > Reading)
+                ///$arr['charset'] = get_bloginfo('charset'); // – The "Encoding for pages and feeds" (set in Settings > Reading)
                 $arr['version'] = get_bloginfo('version'); // – The current WordPress version
-                $arr['html_type'] = get_bloginfo('html_type'); // – The content-type (default: "text/html"). Themes and plugins can override the default value using the ‘pre_option_html_type’ filter
-                $arr['text_direction'] = get_bloginfo('text_direction'); // – The text direction determined by the site’s language. is_rtl() should be used instead
+                //$arr['html_type'] = get_bloginfo('html_type'); // – The content-type (default: "text/html"). Themes and plugins can override the default value using the ‘pre_option_html_type’ filter
+                //$arr['text_direction'] = get_bloginfo('text_direction'); // – The text direction determined by the site’s language. is_rtl() should be used instead
                 $arr['language'] = get_bloginfo('language'); // – Language code for the current site
-                $arr['stylesheet_url'] = get_bloginfo('stylesheet_url'); // – URL to the stylesheet for the active theme. An active child theme will take precedence over this value
-                $arr['stylesheet_directory'] = get_bloginfo('stylesheet_directory'); // – Directory path for the active theme. An active child theme will take precedence over this value
-                $arr['template_url'] = get_bloginfo('template_url'); // / ‘template_directory’ – URL of the active theme’s directory. An active child theme will NOT take precedence over this value
-                $arr['pingback_url'] = get_bloginfo('pingback_url'); // – The pingback XML-RPC file URL (xmlrpc.php)
-                $arr['atom_url'] = get_bloginfo('atom_url'); // – The Atom feed URL (/feed/atom)
-                $arr['rdf_url'] = get_bloginfo('rdf_url'); // – The RDF/RSS 1.0 feed URL (/feed/rdf)
-                $arr['rss_url'] = get_bloginfo('rss_url'); // – The RSS 0.92 feed URL (/feed/rss)
-                $arr['rss2_url'] = get_bloginfo('rss2_url'); // – The RSS 2.0 feed URL (/feed)
-                $arr['comments_atom_url'] = get_bloginfo('comments_atom_url'); // – The comments Atom feed URL (/comments/feed)
-                $arr['comments_rss2_url'] = get_bloginfo('comments_rss2_url'); // – The comments RSS 2.0 feed URL (/comments/feed)
+                //$arr['stylesheet_url'] = get_bloginfo('stylesheet_url'); // – URL to the stylesheet for the active theme. An active child theme will take precedence over this value
+                //$arr['stylesheet_directory'] = get_bloginfo('stylesheet_directory'); // – Directory path for the active theme. An active child theme will take precedence over this value
+                //$arr['template_url'] = get_bloginfo('template_url'); // / ‘template_directory’ – URL of the active theme’s directory. An active child theme will NOT take precedence over this value
+                //$arr['pingback_url'] = get_bloginfo('pingback_url'); // – The pingback XML-RPC file URL (xmlrpc.php)
+                //$arr['atom_url'] = get_bloginfo('atom_url'); // – The Atom feed URL (/feed/atom)
+                //$arr['rdf_url'] = get_bloginfo('rdf_url'); // – The RDF/RSS 1.0 feed URL (/feed/rdf)
+                //$arr['rss_url'] = get_bloginfo('rss_url'); // – The RSS 0.92 feed URL (/feed/rss)
+                //$arr['rss2_url'] = get_bloginfo('rss2_url'); // – The RSS 2.0 feed URL (/feed)
+                //$arr['comments_atom_url'] = get_bloginfo('comments_atom_url'); // – The comments Atom feed URL (/comments/feed)
+                //$arr['comments_rss2_url'] = get_bloginfo('comments_rss2_url'); // – The comments RSS 2.0 feed URL (/comments/feed)
+                $arr["site_icon"] = get_site_icon_url();
+
+                //BANNERS
+                $arr["enable_slide_banners"] = get_option('sk_enable_slide_banners', 0);
+                $arr["enable_big_banners"] = get_option('sk_enable_big_banners', 0);
+                $arr["enable_carousel_banners"] = get_option('sk_enable_carousel_banners', 0);
+                $arr["enable_thin_banners"] = get_option('sk_enable_thin_banners', 0);
+                $arr["enable_sale_banners"] = get_option('sk_enable_sale_banners', 0);
+                $arr["enable_categories_banners"] = get_option('sk_enable_categories_banners', 0);
+                $arr["enable_video_banners"] = get_option('sk_enable_video_banners', 0);
+
                 return $arr;
             }
     ));
@@ -1200,6 +1211,9 @@ add_action( 'rest_api_init', function() {
         'callback' => function($data) {
             global $wpdb;
             $table_name = $wpdb->prefix . 'skye_app_banners'; // do not forget about tables prefix
+            
+            $banner_type = (isset($data['type'])) ? $data['type'] : "slide";
+            
             $count = 0;
             $arrays = array(
                 // 'enabled' => (get_option('sk_app_enable_banner_slides', 0)) ? true : false,
@@ -1209,7 +1223,8 @@ add_action( 'rest_api_init', function() {
             );
 
             //fetch banners
-            $result = $wpdb->get_results("SELECT * FROM $table_name ORDER BY ID ASC");
+            $result = $wpdb->get_results("SELECT * FROM $table_name WHERE banner_type='$banner_type' ORDER BY ID ASC");
+            $count = count($result);
             if ($result && count($result) > 0) {
                 foreach ($result as $item) {
                     $arrays['results'][] = array(
@@ -1221,6 +1236,7 @@ add_action( 'rest_api_init', function() {
                         'url' => $item->url,
                     );
                 }
+                
             }
 
 

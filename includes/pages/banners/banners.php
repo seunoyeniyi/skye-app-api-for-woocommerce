@@ -1,9 +1,13 @@
 <?php
 
 
+
     global $wpdb;
 
+    $banner_type = (isset($banner_type)) ? $banner_type : "slide";
+
     $table = new Skye_App_Banners_List_Table();
+    $table->banner_type = $banner_type;
     $table->prepare_items();
 
     $message = '';
@@ -14,8 +18,7 @@
 <div class="wrap">
 
     <div class="icon32 icon32-posts-post" id="icon-edit"><br></div>
-    <h2><?php _e('Banners', 'cltd_example')?> <a class="add-new-h2"
-                                 href="<?php echo get_admin_url(get_current_blog_id(), 'admin.php?page=skye_edit_banner');?>"><?php _e('Add new', 'cltd_example')?></a>
+    <h2><?php echo ucfirst($banner_type); ?> Banners <a class="add-new-h2" href="<?php echo get_admin_url(get_current_blog_id(), 'admin.php?page=skye_edit_banner&banner_type=' . $banner_type . '&redirect=' . urlencode(admin_url( 'admin.php?page=' . $_GET['page'])) );?>"><?php _e('Add new', 'cltd_example')?></a>
     </h2>
     <?php echo $message; ?>
 

@@ -27,6 +27,7 @@ if (!function_exists('skye_activated')) {
         $sql = "CREATE TABLE IF NOT EXISTS " . $banners_table . " (
                 ID INT NOT NULL AUTO_INCREMENT,
                 image INT,
+                banner_type VARCHAR(1000) DEFAULT 'slide',
                 title VARCHAR(2000),
                 description VARCHAR(2000),
                 on_click_to VARCHAR(1000),
@@ -35,6 +36,13 @@ if (!function_exists('skye_activated')) {
                 PRIMARY KEY (ID)
             ) " . $charset_collate . ";";
         dbDelta($sql);
+
+        //FOR PRVIOUS INSTALLATION THAT HAS NO banner_type COLUMN
+        $row = $wpdb->get_results("SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE table_name = '$banners_table' AND column_name = 'banner_type'");  
+        
+        if(empty($row)){  
+            $wpdb->query("ALTER TABLE $banners_table ADD banner_type VARCHAR(1000) DEFAULT 'slide'");
+        } 
 
 
         //PAGE FOR ORDER COMPLETION
@@ -68,6 +76,7 @@ add_action('admin_notices', function () {
         delete_transient('skye-api-activated');
     }
 });
+
 include(plugin_dir_path(__FILE__) . 'admin.php');
 
 

@@ -1,4 +1,3 @@
-<!-- <h1><?php esc_html_e('Site App - General Settings', 'sk_options'); ?></h1> -->
 
 <?php
 if (isset($_GET['clear_customers_cart'])) {
@@ -8,15 +7,37 @@ if (isset($_GET['clear_customers_cart'])) {
 		<div id="message" class="updated woocommerce-message wc-connect woocommerce-message--success">
 			<p><b>Cleared!</b> All customers cart has been cleared.</p>
 		</div>
-<?php } else { ?>
-	<div id="message" class="updated woocommerce-message wc-connect woocommerce-message--success">
+	<?php } else { ?>
+		<div id="message" class="updated woocommerce-message wc-connect woocommerce-message--success">
 			<p><b>ERROR!</b> Unable to clear customers cart.</p>
 		</div>
 <?php }
-
 }
 
+
+
+//SETTINGS 
+if ($_SERVER['REQUEST_METHOD'] == "POST" && isset($_POST['save-app'])) {
+	update_option('sk_enable_slide_banners', isset($_POST['enable_slide_banners']) ? 1 : 0);
+	update_option('sk_enable_big_banners', isset($_POST['enable_big_banners']) ? 1 : 0);
+	update_option('sk_enable_carousel_banners', isset($_POST['enable_carousel_banners']) ? 1 : 0);
+	update_option('sk_enable_thin_banners', isset($_POST['enable_thin_banners']) ? 1 : 0);
+	update_option('sk_enable_sale_banners', isset($_POST['enable_sale_banners']) ? 1 : 0);
+	update_option('sk_enable_categories_banners', isset($_POST['enable_categories_banners']) ? 1 : 0);
+	update_option('sk_enable_video_banners', isset($_POST['enable_video_banners']) ? 1 : 0);
+
+	?>
+	<div id="message" class="updated inline"><p><strong>Your settings have been saved.</strong></p></div>
+	<?php
+}
+
+
 ?>
+
+
+
+
+
 
 <div id="welcome-panel" class="welcome-panel" style="padding-bottom: 20px;">
 	<input type="hidden" id="welcomepanelnonce" name="welcomepanelnonce" value="633898c0b5">
@@ -47,4 +68,108 @@ if (isset($_GET['clear_customers_cart'])) {
 			</div>
 		</div>
 	</div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="wrap woocommerce">
+	<form method="post" id="mainform" action="" enctype="multipart/form-data">
+
+		<h1>Quick Settings</h1>
+		<h2>Store Banners</h2>
+		<div id="store_address-description">
+			<p>This is how you control which banner to display in your app. <br> <b>NOTE:</b> Enabling banners is not active until it is accessed from the APP.</p>
+		</div>
+		<table class="form-table">
+
+			<tbody>
+			<tr valign="top" class="">
+					<th scope="row" class="titledesc">Slide Banners</th>
+					<td class="">
+							<legend class="screen-reader-text"><span>Enable</span></legend>
+							<label for="enable_slide_banners">
+								<input name="enable_slide_banners" id="enable_slide_banners" type="checkbox" class="" <?php echo (get_option( "sk_enable_slide_banners", 0)) ? "checked" : ""; ?>> Enable</label>
+					</td>
+			</tr>
+			<tr valign="top" class="">
+					<th scope="row" class="titledesc">Big Banners</th>
+					<td class="">
+							<legend class="screen-reader-text"><span>Enable</span></legend>
+							<label for="enable_big_banners">
+								<input name="enable_big_banners" id="enable_big_banners" type="checkbox" class="" <?php echo (get_option( "sk_enable_big_banners", 0)) ? "checked" : ""; ?>> Enable</label>
+					</td>
+			</tr>
+			<tr valign="top" class="">
+					<th scope="row" class="titledesc">Carousel Banners</th>
+					<td class="">
+							<legend class="screen-reader-text"><span>Enable</span></legend>
+							<label for="enable_carousel_banners">
+								<input name="enable_carousel_banners" id="enable_carousel_banners" type="checkbox" class="" <?php echo (get_option( "sk_enable_carousel_banners", 0)) ? "checked" : ""; ?>> Enable</label>
+					</td>
+			</tr>
+			<tr valign="top" class="">
+					<th scope="row" class="titledesc">Thin Banners</th>
+					<td class="">
+							<legend class="screen-reader-text"><span>Enable</span></legend>
+							<label for="enable_thin_banners">
+								<input name="enable_thin_banners" id="enable_thin_banners" type="checkbox" class="" <?php echo (get_option( "sk_enable_thin_banners", 0)) ? "checked" : ""; ?>> Enable</label>
+					</td>
+			</tr>
+			<tr valign="top" class="">
+					<th scope="row" class="titledesc">Sale Banners</th>
+					<td class="">
+							<legend class="screen-reader-text"><span>Enable</span></legend>
+							<label for="enable_sale_banners">
+								<input name="enable_sale_banners" id="enable_sale_banners" type="checkbox" class="" <?php echo (get_option( "sk_enable_sale_banners", 0)) ? "checked" : ""; ?>> Enable</label>
+					</td>
+			</tr>
+			<tr valign="top" class="">
+					<th scope="row" class="titledesc">Categories Banners</th>
+					<td class="">
+							<legend class="screen-reader-text"><span>Enable</span></legend>
+							<label for="enable_categories_banners">
+								<input name="enable_categories_banners" id="enable_categories_banners" type="checkbox" class="" <?php echo (get_option( "sk_enable_categories_banners", 0)) ? "checked" : ""; ?>> Enable</label>
+					</td>
+			</tr>
+			<tr valign="top" class="">
+					<th scope="row" class="titledesc">Video Banners</th>
+					<td class="">
+							<legend class="screen-reader-text"><span>Enable</span></legend>
+							<label for="enable_video_banners">
+								<input name="enable_video_banners" id="enable_video_banners" type="checkbox" class="" <?php echo (get_option( "sk_enable_video_banners", 0)) ? "checked" : ""; ?>> Enable</label>
+					</td>
+			</tr>
+			</tbody>
+		</table>
+		<h2>Push Notification</h2>
+		<div id="store_address-description">
+			<p>Provide the API keys for your push notification, support only API key from Firebase(FCM)</p>
+		</div>
+		<table class="form-table">
+
+			<tbody>
+			<tr valign="top">
+					<th scope="row" class="titledesc">
+						<label for="push_api_key">API Key <span class="woocommerce-help-tip"></span></label>
+					</th>
+					<td class="forminp forminp-text">
+						<input name="push_api_key" id="push_api_key" type="text" style="width: 80%;" value="" class="" placeholder="Key">
+					</td>
+				</tr>
+			</tbody>
+		</table>
+
+		<p class="submit">
+			<button name="save-app" class="button-primary woocommerce-save-button" type="submit" value="Save changes">Save changes</button>
+		</p>
+	</form>
 </div>

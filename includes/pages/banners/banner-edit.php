@@ -4,6 +4,9 @@
     global $wpdb;
     $table_name = $wpdb->prefix . 'skye_app_banners'; // do not forget about tables prefix
 
+    $banner_type = (isset($_REQUEST['banner_type'])) ? $_GET['banner_type'] : "slide";
+    $redirect = (isset($_REQUEST['redirect'])) ? $_GET['redirect'] : get_admin_url(get_current_blog_id(), 'admin.php?page=skye-app-banner-slides');
+
     $message = '';
     $notice = '';
 
@@ -16,6 +19,7 @@
         'category' => null,
         'on_click_to' => null,
         'url' => null,
+        'banner_type' => null,
     );
 
     // here we are verifying does this request is post back and have correct nonce
@@ -67,8 +71,7 @@
     ?>
 <div class="wrap">
     <div class="icon32 icon32-posts-post" id="icon-edit"><br></div>
-    <h2><?php _e('Banner', 'cltd_example')?> <a class="add-new-h2"
-                                href="<?php echo get_admin_url(get_current_blog_id(), 'admin.php?page=skye-app-banner-slides-list');?>"><?php _e('Back to banners', 'cltd_example')?></a>
+    <h2><?php _e('Banner', 'cltd_example')?> <a class="add-new-h2" href="<?php echo $redirect; ?>"><?php _e('Back to banners', 'cltd_example')?></a>
     </h2>
 
     <?php if (!empty($notice)): ?>
@@ -82,6 +85,8 @@
         <input type="hidden" name="nonce" value="<?php echo wp_create_nonce(basename(__FILE__))?>"/>
         <?php /* NOTICE: here we storing id to determine will be item added or updated */ ?>
         <input type="hidden" name="id" value="<?php echo $item['id'] ?>"/>
+        <input type="hidden" name="banner_type" value="<?php echo $banner_type; ?>"/>
+        <input type="hidden" name="redirect" value="<?php echo $redirect; ?>"/>
 
         <div class="metabox-holder" id="poststuff">
             <div id="post-body">
