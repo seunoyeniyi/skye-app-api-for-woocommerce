@@ -25,6 +25,7 @@ if ($_SERVER['REQUEST_METHOD'] == "POST" && isset($_POST['save-app'])) {
 	update_option('sk_enable_sale_banners', isset($_POST['enable_sale_banners']) ? 1 : 0);
 	update_option('sk_enable_categories_banners', isset($_POST['enable_categories_banners']) ? 1 : 0);
 	update_option('sk_enable_video_banners', isset($_POST['enable_video_banners']) ? 1 : 0);
+	update_option('sk_push_api_key', $_POST['push_api_key']);
 
 	?>
 	<div id="message" class="updated inline"><p><strong>Your settings have been saved.</strong></p></div>
@@ -162,7 +163,7 @@ if ($_SERVER['REQUEST_METHOD'] == "POST" && isset($_POST['save-app'])) {
 						<label for="push_api_key">API Key <span class="woocommerce-help-tip"></span></label>
 					</th>
 					<td class="forminp forminp-text">
-						<input name="push_api_key" id="push_api_key" type="text" style="width: 80%;" value="" class="" placeholder="Key">
+						<input name="push_api_key" id="push_api_key" type="text" style="width: 80%;" value="<?php echo get_option( "sk_push_api_key", ""); ?>" class="" placeholder="Key">
 					</td>
 				</tr>
 			</tbody>
