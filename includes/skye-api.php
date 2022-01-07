@@ -113,6 +113,8 @@ add_action( 'rest_api_init', function() {
                             if (sk_user_cart_exists($replace_cart_user))
                                 sk_change_cart_user_id($replace_cart_user, $user_info['ID']);
                     }
+                    //push notification
+                    sk_push_notification(get_user_meta( $user_info["ID"], 'sk_device_id'), array('title'=>' Welcome', 'body'=>'New login detected!'));
                     return $user_info;
                 } else {
                     return array(
@@ -1349,7 +1351,27 @@ add_action( 'rest_api_init', function() {
         }
     ));
 
-    
+    //save user device
+    register_rest_route( SKYE_API_NAMESPACE_V1, '/save-user-device/(?P<user_id>.*?)', array(
+        'methods' => 'POST',
+        'permission_callback' => function() {return true; },
+        'callback' => function($data) {
+            $device_id = $data["device"];
+            $user_id = $data['user_id'];
+            $array = array(
+                "status" => "failed",
+                "device_id" => ""
+            );
+           
+            if (update_user_meta( $user_id, "sk_device_id", $device_id)) {
+                $array["status"] = "success";
+            }
+            $array["device_id"] = get_user_meta( $user_id, "sk_device_id", true);
+
+
+            return $array;
+        }
+));
 
 
     //FOR DELIVERY API

@@ -1,0 +1,12 @@
+div.push-notification-wrap {
+    padding: 20px;
+    background-color: white;
+}
+@media(min-width: 768px) {
+    div.push-notification-wrap {
+       margin-left: 300px;
+       margin-right: 300px;
+       background-color: white;
+       padding: 20px 40px 20px 40px;
+    }
+}

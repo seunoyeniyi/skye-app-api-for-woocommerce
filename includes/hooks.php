@@ -388,3 +388,89 @@ function sk_app_thankyou(){ if (in_sk_app()) {  ?>
     </script>
 <?php } }
 
+
+//PUSH NOTIFICATION
+add_action( 'woocommerce_order_status_completed', function($order_id) {
+    //push notification
+    $order = wc_get_order( $order_id );
+    $device = get_user_meta( $order->get_user_id(), 'sk_device_id');
+    if ($device) {
+        sk_push_notification($device, array(
+            'title'=>'Order Completed', 
+            'body'=>'Your Order #' . $order->get_id() . ' has been marked completed.'
+        ));
+    }
+}, 10, 1 );
+
+add_action( 'woocommerce_order_status_pending', function($order_id) {
+    //push notification
+    $order = wc_get_order( $order_id );
+    $device = get_user_meta( $order->get_user_id(), 'sk_device_id');
+    if ($device) {
+        sk_push_notification($device, array(
+            'title'=>'Order Pending', 
+            'body'=>'Your Order #' . $order->get_id() . ' has been marked pending payment.'
+        ));
+    }
+}, 10, 1 );
+
+add_action( 'woocommerce_order_status_failed', function($order_id) {
+    //push notification
+    $order = wc_get_order( $order_id );
+    $device = get_user_meta( $order->get_user_id(), 'sk_device_id');
+    if ($device) {
+        sk_push_notification($device, array(
+            'title'=>'Order Failed', 
+            'body'=>'Your Order #' . $order->get_id() . ' has been marked failed.'
+        ));
+    }
+}, 10, 1 );
+
+add_action( 'woocommerce_order_status_on-hold', function($order_id) {
+    //push notification
+    $order = wc_get_order( $order_id );
+    $device = get_user_meta( $order->get_user_id(), 'sk_device_id');
+    if ($device) {
+        sk_push_notification($device, array(
+            'title'=>'Order On Hold', 
+            'body'=>'Your Order #' . $order->get_id() . ' has been marked on-hold.'
+        ));
+    }
+}, 10, 1 );
+
+add_action( 'woocommerce_order_status_processing', function($order_id) {
+    //push notification
+    $order = wc_get_order( $order_id );
+    $device = get_user_meta( $order->get_user_id(), 'sk_device_id');
+    if ($device) {
+        sk_push_notification($device, array(
+            'title'=>'Order Processing', 
+            'body'=>'Your Order #' . $order->get_id() . ' has been marked processing.'
+        ));
+    }
+}, 10, 1 );
+
+add_action( 'woocommerce_order_status_refunded', function($order_id) {
+    //push notification
+    $order = wc_get_order( $order_id );
+    $device = get_user_meta( $order->get_user_id(), 'sk_device_id');
+    if ($device) {
+        sk_push_notification($device, array(
+            'title'=>'Order Refunded', 
+            'body'=>'Your Order #' . $order->get_id() . ' has been marked refunded.'
+        ));
+    }
+}, 10, 1 );
+
+add_action( 'woocommerce_order_status_cancelled', function($order_id) {
+    //push notification
+    $order = wc_get_order( $order_id );
+    $device = get_user_meta( $order->get_user_id(), 'sk_device_id');
+    if ($device) {
+        sk_push_notification($device, array(
+            'title'=>'Order Cancelled', 
+            'body'=>'Your Order #' . $order->get_id() . ' has been marked cancelled.'
+        ));
+    }
+}, 10, 1 );
+//END OF PUSH NOTIFICATION
