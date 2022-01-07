@@ -35,7 +35,7 @@ if ($_SERVER['REQUEST_METHOD'] == "POST" && isset($_POST['notify'])) {
 
 
 <br>
-<div class="wrap push-notification-wrap">
+<div class="push-notification-wrap">
 <h1 style="text-align: center;">Push Notification</h1>
 
 <p style="text-align: center;">Send targeted notifications to drive customer engagement.</p>
