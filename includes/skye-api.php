@@ -508,6 +508,7 @@ add_action( 'rest_api_init', function() {
             $search = isset($data['search']) ? $data['search'] : null;
 			$tag = isset($data['tag']) ? $data['tag'] : null;
 			$hide_description = isset($data['hide_description']);
+        
 
             $query_args = array(
                 'post_type' => 'product',
@@ -561,6 +562,22 @@ add_action( 'rest_api_init', function() {
                         'terms'    => 'featured',
                     )
                 );
+            }
+
+            if (isset($data['color'])) {
+                $color = $data['color'];
+                $query_args['meta_query'] = array( array(
+                    'key' => '_visibility',
+                    'value' => array('catalog', 'visible'),
+                    'compare' => 'IN',
+                ) );
+
+                $query_args['tax_query'] = array( array(
+                        'taxonomy'        => 'pa_color',
+                        'field'           => 'slug',
+                        'terms'           =>  array($color),
+                        'operator'        => 'IN',
+                    ) );
             }
             
 
