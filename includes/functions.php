@@ -1084,6 +1084,17 @@ if (!function_exists("sk_get_user_shipping_address")) {
         $array['shipping_phone']    = $customer->get_billing_phone(); // since there is not method to get phone for shipping
         $array['shipping_email']    = $customer->get_billing_email(); // since there is not method to get email for shipping
 
+        //add profile picture, gender and birthday
+        $attachment_id = get_user_meta( $user_id, 'image', true );
+        if ( $attachment_id ) {
+          $array['image'] =  $original_image_url = wp_get_attachment_url( $attachment_id );
+        } else {
+            $array['image'] = null;
+        }
+
+        $array["gender"] = get_user_meta( $user_id, 'gender_field', true );
+        $array["birthday"] = get_user_meta( $user_id, 'birthday_field', true );
+        $array["other_phone"] = get_user_meta( $user_id, 'other_phone_field', true );
 
         return $array;
     }
@@ -1119,6 +1130,21 @@ if (!function_exists("sk_get_user_info")) {
         $user = (array) get_userdata($user_id);
         $user['shipping_address'] = sk_get_user_shipping_address($user_id);
         $user['billing_address'] = sk_get_user_billing_address($user_id);
+
+
+        //add profile picture, gender and birthday
+        $attachment_id = get_user_meta( $user_id, 'image', true );
+        if ( $attachment_id ) {
+            $user['image'] =  $original_image_url = wp_get_attachment_url( $attachment_id );
+        } else {
+            $user['image'] = null;
+        }
+
+        $user["gender"] = get_user_meta( $user_id, 'gender_field', true );
+        $user["birthday"] = get_user_meta( $user_id, 'birthday_field', true );
+        $user["other_phone"] = get_user_meta( $user_id, 'other_phone_field', true );
+
+
         return $user;
     }
 }

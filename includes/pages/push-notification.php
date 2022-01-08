@@ -42,12 +42,12 @@ if ($_SERVER['REQUEST_METHOD'] == "POST" && isset($_POST['notify'])) {
 
 <form method="post" name="push-notifications">
     <p>
-        <label for="notification_title"><b>Notification title</b> (You can paste any emoji)</label>
+        <label for="notification_title"><b>Notification title</b>  ( 🥳 You can paste any emoji 🥳 )</label>
         <input name="notification_title" type="text" id="notification_title" value="" style="width: 100%;" aria-required="true" autocapitalize="none" autocorrect="off" maxlength="60" placeholder="Enter optional title">
     </p>
 
     <p>
-        <label for="notification_text"><b>Notification text</b></label>
+        <label for="notification_text"><b>Notification text </b> </label>
         <textarea name="notification_text" id="notification_text" style="width: 100%;" placeholder="Enter notification text" required></textarea>
     </p>
 	

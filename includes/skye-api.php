@@ -234,8 +234,35 @@ add_action( 'rest_api_init', function() {
                 if (isset($data[$key]))
                     $array_to_change[$key] = sanitize_text_field($data[$key]);
             }
-            //return id of the updated user
-            return wp_update_user($array_to_change);
+
+
+            //update date of birth, gender and picture
+            if (isset($data["gender"])) { //gender
+                update_user_meta( $user_id, 'gender_field', sanitize_text_field($data['gender']) );
+            }
+            if (isset($data["birthday"])) { //date of birth
+                update_user_meta( $user_id, 'birthday_field', sanitize_text_field($data['birthday']) );
+            }
+            if (isset($data['other_phone'])) {
+                update_user_meta( $user_id, 'other_phone_field', sanitize_text_field($data['other_phone']) );
+            }
+            if (isset($_FILES["image"])) { //profile image
+                require_once( ABSPATH . 'wp-admin/includes/image.php' );
+                require_once( ABSPATH . 'wp-admin/includes/file.php' );
+                require_once( ABSPATH . 'wp-admin/includes/media.php' );
+
+                $attachment_id = media_handle_upload( 'image', 0 );
+
+                if ( is_wp_error( $attachment_id ) ) {
+                    update_user_meta( $user_id, 'image', $_FILES['image'] . ": " . $attachment_id->get_error_message() );
+                } else {
+                    update_user_meta( $user_id, 'image', $attachment_id );
+                }
+            }
+
+
+            
+            return sk_get_user_info(wp_update_user($array_to_change));
         }
     ));
     //update user shipping address
@@ -246,7 +273,9 @@ add_action( 'rest_api_init', function() {
             $user_id = $data['user'];
             $customer = new WC_Customer($user_id);
             if (isset($data['first_name'])) $customer->set_shipping_first_name($data['first_name']);
+            if (isset($data['first_name'])) update_user_meta( $user_id, "first_name", $data['first_name']);
             if (isset($data['last_name'])) $customer->set_shipping_last_name($data['last_name']);
+            if (isset($data['last_name'])) update_user_meta( $user_id, "last_name", $data['last_name']);
             if (isset($data['company'])) $customer->set_shipping_company($data['company']);
             if (isset($data['country'])) $customer->set_shipping_country($data['country']);
             if (isset($data['state'])) $customer->set_shipping_state($data['state']);
@@ -277,6 +306,30 @@ add_action( 'rest_api_init', function() {
                     (isset($data['shipping_provider_cost'])) ? $data['shipping_provider_cost'] : 0
                 );
             }
+
+            //update date of birth, gender and picture
+            if (isset($data["gender"])) { //gender
+                update_user_meta( $user_id, 'gender_field', sanitize_text_field($data['gender']) );
+            }
+            if (isset($data["birthday"])) { //date of birth
+                update_user_meta( $user_id, 'birthday_field', sanitize_text_field($data['birthday']) );
+            }
+            if (isset($data['other_phone'])) {
+                update_user_meta( $user_id, 'other_phone_field', sanitize_text_field($data['other_phone']) );
+            }
+            if (isset($_FILES["image"])) { //profile image
+                require_once( ABSPATH . 'wp-admin/includes/image.php' );
+                require_once( ABSPATH . 'wp-admin/includes/file.php' );
+                require_once( ABSPATH . 'wp-admin/includes/media.php' );
+
+                $attachment_id = media_handle_upload( 'image', 0 );
+
+                if ( is_wp_error( $attachment_id ) ) {
+                    update_user_meta( $user_id, 'image', $_FILES['image'] . ": " . $attachment_id->get_error_message() );
+                } else {
+                    update_user_meta( $user_id, 'image', $attachment_id );
+                }
+            }
             
             $array = array();
             if ($customer->save()) {
@@ -284,7 +337,11 @@ add_action( 'rest_api_init', function() {
             } else {
                 $array['code'] = "not-saved";
             }
+
+
             $array['data'] = sk_get_user_shipping_address($user_id);
+
+
             return $array;
         }
     ));
@@ -1371,7 +1428,9 @@ add_action( 'rest_api_init', function() {
 
             return $array;
         }
-));
+    ));
+
+    
 
 
     //FOR DELIVERY API

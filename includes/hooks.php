@@ -474,3 +474,9 @@ add_action( 'woocommerce_order_status_cancelled', function($order_id) {
     }
 }, 10, 1 );
 //END OF PUSH NOTIFICATION
+
+
+
+//CUSTOM USER PROFILE FIELD
+include(plugin_dir_path(__FILE__) . 'hooks/custom-user-profile-field.php');
+//END CUSTOM USER PROFILE FIELD
