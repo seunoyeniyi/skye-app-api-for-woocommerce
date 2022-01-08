@@ -1447,6 +1447,48 @@ add_action( 'rest_api_init', function() {
         }
     ));
 
+
+    //specific attributes name and values page
+    register_rest_route( SKYE_API_NAMESPACE_V1, '/attributes', array(
+        'methods' => 'GET',
+            'permission_callback' => function() {return true; },
+        'callback' => function($data) {
+           $name = (isset($data['name'])) ? $data['name'] : "all";
+           $hide_empty = isset($data['hide_empty']);
+
+            $array = array();
+            $terms = wc_get_attribute_taxonomies();
+
+           if ($name == "all") {
+            foreach ($terms as $term) {
+                $term->terms = get_terms(
+                    array(
+                        'taxonomy' => 'pa_' . $term->attribute_name,
+                        'hide_empty' => $hide_empty
+                    )
+                );
+                $array[] = $term;
+            }
+           } else {
+
+            foreach($terms as $term) {
+                if ($term->attribute_name == $name) {
+                    $term->terms = get_terms(
+                        array(
+                            'taxonomy' => 'pa_' . $term->attribute_name,
+                            'hide_empty' => $hide_empty
+                        )
+                    );
+                    return $term;
+                }
+            }
+
+
+           }
+           return $array;
+
+        }
+    ));
     
 
 
