@@ -33,8 +33,8 @@ add_action( 'rest_api_init', function() {
                 $arr["enable_big_banners"] = get_option('sk_enable_big_banners', 0);
                 $arr["enable_carousel_banners"] = get_option('sk_enable_carousel_banners', 0);
                 $arr["enable_thin_banners"] = get_option('sk_enable_thin_banners', 0);
-                $arr["enable_sale_banners"] = get_option('sk_enable_sale_banners', 0);
-                $arr["enable_categories_banners"] = get_option('sk_enable_categories_banners', 0);
+                // $arr["enable_sale_banners"] = get_option('sk_enable_sale_banners', 0);
+                $arr["enable_grid_banners"] = get_option('sk_enable_grid_banners', 0);
                 $arr["enable_video_banners"] = get_option('sk_enable_video_banners', 0);
 
                 return $arr;
@@ -1487,6 +1487,41 @@ add_action( 'rest_api_init', function() {
            }
            return $array;
 
+        }
+    ));
+
+
+    //search -- suggestive search
+    register_rest_route( SKYE_API_NAMESPACE_V1, '/search', array(
+        'methods' => 'GET',
+            'permission_callback' => function() {return true; },
+        'callback' => function($data) {
+            $s = $data['s'];
+        
+
+            $query_args = array(
+                'post_type' => 'product',
+                'posts_per_page' => 10,
+                's' => $s,
+            );
+			
+           
+            $query = new WP_Query($query_args);
+
+            if (!$query->have_posts())
+                return array();
+
+            $product_array = array();
+            
+            while($query->have_posts()) {
+                $query->the_post();
+                $product_array[] = array(
+                    'ID' => get_the_ID(),
+                    'name' => get_the_title(),
+                );
+            }
+    
+            return $product_array;
         }
     ));
     

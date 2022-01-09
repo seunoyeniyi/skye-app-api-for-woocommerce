@@ -22,8 +22,8 @@ if ($_SERVER['REQUEST_METHOD'] == "POST" && isset($_POST['save-app'])) {
 	update_option('sk_enable_big_banners', isset($_POST['enable_big_banners']) ? 1 : 0);
 	update_option('sk_enable_carousel_banners', isset($_POST['enable_carousel_banners']) ? 1 : 0);
 	update_option('sk_enable_thin_banners', isset($_POST['enable_thin_banners']) ? 1 : 0);
-	update_option('sk_enable_sale_banners', isset($_POST['enable_sale_banners']) ? 1 : 0);
-	update_option('sk_enable_categories_banners', isset($_POST['enable_categories_banners']) ? 1 : 0);
+	// update_option('sk_enable_sale_banners', isset($_POST['enable_sale_banners']) ? 1 : 0);
+	update_option('sk_enable_grid_banners', isset($_POST['enable_grid_banners']) ? 1 : 0);
 	update_option('sk_enable_video_banners', isset($_POST['enable_video_banners']) ? 1 : 0);
 	update_option('sk_push_api_key', $_POST['push_api_key']);
 
@@ -82,7 +82,7 @@ if ($_SERVER['REQUEST_METHOD'] == "POST" && isset($_POST['save-app'])) {
 
 
 
-<div class="wrap woocommerce">
+<div class="woocommerce" style="padding-left: 20px; padding-right: 20px;">
 	<form method="post" id="mainform" action="" enctype="multipart/form-data">
 
 		<h1>Quick Settings</h1>
@@ -125,30 +125,30 @@ if ($_SERVER['REQUEST_METHOD'] == "POST" && isset($_POST['save-app'])) {
 								<input name="enable_thin_banners" id="enable_thin_banners" type="checkbox" class="" <?php echo (get_option( "sk_enable_thin_banners", 0)) ? "checked" : ""; ?>> Enable</label>
 					</td>
 			</tr>
-			<tr valign="top" class="">
+			<!-- <tr valign="top" class="">
 					<th scope="row" class="titledesc">Sale Banners</th>
 					<td class="">
 							<legend class="screen-reader-text"><span>Enable</span></legend>
 							<label for="enable_sale_banners">
 								<input name="enable_sale_banners" id="enable_sale_banners" type="checkbox" class="" <?php echo (get_option( "sk_enable_sale_banners", 0)) ? "checked" : ""; ?>> Enable</label>
 					</td>
-			</tr>
+			</tr> -->
 			<tr valign="top" class="">
-					<th scope="row" class="titledesc">Categories Banners</th>
+					<th scope="row" class="titledesc">Grid Banners</th>
 					<td class="">
 							<legend class="screen-reader-text"><span>Enable</span></legend>
-							<label for="enable_categories_banners">
-								<input name="enable_categories_banners" id="enable_categories_banners" type="checkbox" class="" <?php echo (get_option( "sk_enable_categories_banners", 0)) ? "checked" : ""; ?>> Enable</label>
+							<label for="enable_grid_banners">
+								<input name="enable_grid_banners" id="enable_grid_banners" type="checkbox" class="" <?php echo (get_option( "sk_enable_grid_banners", 0)) ? "checked" : ""; ?>> Enable</label>
 					</td>
 			</tr>
-			<tr valign="top" class="">
+			<!--NOT AVAILABLE FOR NOW <tr valign="top" class="">
 					<th scope="row" class="titledesc">Video Banners</th>
 					<td class="">
 							<legend class="screen-reader-text"><span>Enable</span></legend>
 							<label for="enable_video_banners">
 								<input name="enable_video_banners" id="enable_video_banners" type="checkbox" class="" <?php echo (get_option( "sk_enable_video_banners", 0)) ? "checked" : ""; ?>> Enable</label>
 					</td>
-			</tr>
+			</tr> -->
 			</tbody>
 		</table>
 		<h2>Push Notification</h2>

@@ -49,7 +49,7 @@ function skye_app_banners_form_meta_box_handler($item)
                     <label for="title"><?php _e('Title', 'cltd_example') ?></label>
                 </th>
                 <td>
-                    <input id="title" name="title" type="text" style="width: 95%" value="<?php echo esc_attr($item['title']) ?>" size="50" class="code" placeholder="<?php _e('Title', 'cltd_example') ?>">
+                    <input id="title" name="title" type="text" style="width: 95%" value="<?php echo str_replace('\\', '', $item['title']); ?>" size="50" class="code" placeholder="<?php _e('Title', 'cltd_example') ?>">
                 </td>
             </tr>
             <tr class="form-field">
@@ -57,7 +57,7 @@ function skye_app_banners_form_meta_box_handler($item)
                     <label for="description"><?php _e('Description', 'cltd_example') ?></label>
                 </th>
                 <td>
-                    <textarea id="d" name="description" style="width: 95%" size="50" class="code" placeholder="<?php _e('Description', 'cltd_example') ?>"><?php echo esc_attr($item['description']) ?></textarea>
+                    <textarea id="d" name="description" style="width: 95%" size="50" class="code" placeholder="<?php _e('Description', 'cltd_example') ?>"><?php echo $item['description']; ?></textarea>
                 </td>
             </tr>
             <tr class="form-field">
@@ -75,7 +75,7 @@ function skye_app_banners_form_meta_box_handler($item)
             </tr>
             <tr class="form-field" id="categories-row" style="display: <?php echo ($item['on_click_to'] == "category") ? "dull":"none"; ?>;">
                 <th valign="top" scope="row">
-                    <label for="categories"><?php _e('Categories', 'cltd_example') ?></label>
+                    <label for="categories"><?php _e('Category', 'cltd_example') ?></label>
                 </th>
                 <td>
                     <select id="categories" name="category" style="width: 95%"  class="code" required>
@@ -179,12 +179,12 @@ class Skye_App_Banners_List_Table extends WP_List_Table
     }
     function column_title($item)
     {
-        return '<strong>' . $item['title'] . '</strong>';
+        return '<strong>' . str_replace('\\', '', $item['title']) . '</strong>';
     }
-    function column_description($item)
-    {
-        return '<em>' . $item['description'] . '</em>';
-    }
+    // function column_description($item)
+    // {
+    //     return '<em>' . $item['description'] . '</em>';
+    // }
     function column_on_click_to($item)
     {
         return '<em>' . $item['on_click_to'] . '</em>';
@@ -250,7 +250,7 @@ class Skye_App_Banners_List_Table extends WP_List_Table
             'cb' => '<input type="checkbox" />', //Render a checkbox instead of text
             'image' => __('Image', 'cltd_example'),
             'title' => __('Title', 'cltd_example'),
-            'description' => __('Description', 'cltd_example'),
+            // 'description' => __('Description', 'cltd_example'),
             // 'on_click_to' => __('On Click to', 'cltd_example'),
             // 'url' => __('URL', 'cltd_example'),
         );
