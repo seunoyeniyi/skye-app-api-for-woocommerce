@@ -208,7 +208,7 @@ class Skye_App_Banners_List_Table extends WP_List_Table
         // also notice how we use $this->_args['singular'] so in this example it will
         // be something like &person=2
         $actions = array(
-            'edit' => sprintf('<a href="?page=skye_edit_banner&id=%s">%s</a>', $item['ID'], __('Edit', 'cltd_example')),
+            'edit' => sprintf('<a href="?page=skye_edit_banner&id=%s&banner_type=%s&redirect=%s">%s</a>', $item['ID'], $this->banner_type, urlencode(admin_url( 'admin.php?page=' . $_REQUEST['page'])), __('Edit', 'cltd_example')),
             'delete' => sprintf('<a href="?page=%s&action=delete&id=%s">%s</a>', $_REQUEST['page'], $item['ID'], __('Delete', 'cltd_example')),
         );
 

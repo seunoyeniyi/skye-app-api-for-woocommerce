@@ -4,8 +4,8 @@
     global $wpdb;
     $table_name = $wpdb->prefix . 'skye_app_banners'; // do not forget about tables prefix
 
-    $banner_type = (isset($_REQUEST['banner_type'])) ? $_GET['banner_type'] : "slide";
-    $redirect = (isset($_REQUEST['redirect'])) ? $_GET['redirect'] : get_admin_url(get_current_blog_id(), 'admin.php?page=skye-app-banner-slides');
+    $banner_type = (isset($_REQUEST['banner_type'])) ? $_REQUEST['banner_type'] : "slide";
+    $redirect = (isset($_REQUEST['redirect'])) ? $_REQUEST['redirect'] : get_admin_url(get_current_blog_id(), 'admin.php?page=skye-app-banner-slides');
 
     $message = '';
     $notice = '';
