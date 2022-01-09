@@ -924,6 +924,14 @@ if (!function_exists('sk_order_info')) {
         $return_array['shipping_methods'] = $order->get_shipping_methods();
         $return_array['shipping_to_display'] = $order->get_shipping_to_display();
 
+        //ADVANCE SHIPMENT PLUGIN
+        $return_array['zorem_tracking_items'] = array();
+        if (class_exists('WC_Advanced_Shipment_Tracking_Actions')) {
+            $shipment = new WC_Advanced_Shipment_Tracking_Actions();
+            $return_array['zorem_tracking_items'] = $shipment->get_tracking_items( $order->get_id(), true );
+        }
+        
+
         // Get Order Dates
         $return_array['date_created'] = $order->get_date_created();
         $return_array['date_modified'] = $order->get_date_modified();
