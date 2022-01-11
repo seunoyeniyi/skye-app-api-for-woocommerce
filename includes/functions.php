@@ -83,6 +83,23 @@ if (!function_exists('sk_get_product_array')) {
         $return_default_attributes[] = $data;
     }
 
+    $comments_args = array ('post_id' => $product->get_id());
+    $comments = get_comments( $comments_args );
+    $comments = array_map(function($comment) {
+        $the_comment = $comment;
+
+        $attachment_id = get_user_meta( $comment->user_id, 'image', true );
+        if ( $attachment_id) {
+            $the_comment->user_image =  $original_image_url = wp_get_attachment_url( $attachment_id );
+        } else {
+            $the_comment->user_image = null;
+        }
+
+        $the_comment->rating = get_comment_meta( $comment->comment_ID, 'rating', true );
+
+        return $the_comment;
+        
+    }, $comments);
 
     return array(
         // General Info
@@ -162,7 +179,8 @@ if (!function_exists('sk_get_product_array')) {
         'reviews_allowed' => $product->get_reviews_allowed(),
         'rating_counts' => $product->get_rating_counts(),
         'average_rating' => $product->get_average_rating(),
-        'review_count' => $product->get_review_count()
+        'review_count' => $product->get_review_count(),
+        'comments' => $comments,
 
     );
     }
@@ -310,7 +328,7 @@ if (!function_exists('sk_get_simple_product_array')) {
         //Product Reviews
         // 'reviews_allowed' => $product->get_reviews_allowed(),
         // 'rating_counts' => $product->get_rating_counts(),
-        // 'average_rating' => $product->get_average_rating(),
+        'average_rating' => $product->get_average_rating(),
         // 'review_count' => $product->get_review_count()
 
     );
@@ -900,7 +918,7 @@ if (!function_exists('sk_order_info')) {
                 // 'somemeta' => $item->get_meta( '_whatever', true ),
                 'type' => $item->get_type(),
             );
-            $return_array['products'][] = array_merge($rr, sk_get_product_array($item->get_product_id()));
+            $return_array['products'][] = array_merge($rr, sk_get_simple_product_array($item->get_product_id(), null, true));
          }
 
          // Other Secondary Items Stuff

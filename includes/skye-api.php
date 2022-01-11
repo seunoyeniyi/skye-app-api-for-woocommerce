@@ -625,7 +625,7 @@ add_action( 'rest_api_init', function() {
             $info_array['related_products'] = array();
             $related_ids  = wc_get_related_products($product_id, $related_product_per_page);
             foreach($related_ids as $id) {
-                $info_array['related_products'][] = sk_get_product_array($id, isset($data['user_id']) ? $data['user_id'] : null);
+                $info_array['related_products'][] = sk_get_simple_product_array($id, isset($data['user_id']) ? $data['user_id'] : null);
             }
                 
 
@@ -1522,6 +1522,59 @@ add_action( 'rest_api_init', function() {
             }
     
             return $product_array;
+        }
+    ));
+
+    //submit reviews
+    register_rest_route( SKYE_API_NAMESPACE_V1, '/add-review/(?P<product_id>.*?)/(?P<user_id>.*?)', array(
+        'methods' => 'POST',
+            'permission_callback' => function() {return true; },
+        'callback' => function($data) {
+            $product_id = $data['product_id'];
+            $user_id = $data['user_id'];
+            $rating = isset($data['rating']) ? $data['rating'] : null;
+            $comment = isset($data['comment']) ? $data['comment'] : null;
+
+            $user = get_userdata($user_id);
+
+    
+
+            $arr = array(
+                'status' => 'failed',
+                'rating' => $rating,
+                'comment_id' => null,
+            );
+
+            if (is_null($rating) || is_null($comment)) {
+                return $arr;
+            }
+
+            $comment_id = wp_insert_comment( array(
+                'comment_post_ID'      => $product_id,
+                'comment_author'       => $user->user_login,
+                'comment_author_email' => $user->user_email, // <== Important
+                'comment_author_url'   => '',
+                'comment_content'      => $comment,
+                'comment_type'         => '',
+                'comment_parent'       => 0,
+                'user_id'              => $user->ID, // <== Important
+                'comment_author_IP'    => '',
+                'comment_agent'        => '',
+                'comment_date'         => date('Y-m-d H:i:s'),
+                'comment_approved'     => 1,
+            ) );
+
+            // HERE inserting the rating (an integer from 1 to 5)
+            $rate = update_comment_meta( $comment_id, 'rating', $rating );
+
+            
+
+            if ($rate)  {
+                $arr['status'] = 'success';
+                $arr['comment_id'] = $comment_id;
+            }
+    
+            return $arr;
         }
     ));
     
