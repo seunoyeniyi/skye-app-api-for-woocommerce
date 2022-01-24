@@ -1,5 +1,10 @@
 <?php
 
+function load_media_files() {
+    wp_enqueue_media();
+}
+add_action( 'admin_enqueue_scripts', 'load_media_files' );
+
 
 function skye_app_validate_banner($item)
 {
@@ -17,30 +22,44 @@ function skye_app_validate_banner($item)
 }
 function skye_app_banners_form_meta_box_handler($item)
 {
+    $banner_type = $_GET['banner_type'];
+    $label = ($banner_type == "video") ? "Video" : "Image";
+    $s_label = ($banner_type == "video") ? "video" : "image";
 ?>
-
+    <input type="hidden" id="media-type" value="<?php echo $s_label; ?>">
     <table cellspacing="2" cellpadding="5" style="width: 100%;" class="form-table" id="skye-app-banner-form">
         <tbody>
             <tr class="form-field">
                 <th valign="top" scope="row">
-                    <label for="image"><?php _e('Image', 'cltd_example') ?></label>
+                    <label for="image"><?php _e($label, 'cltd_example') ?></label>
                 </th>
                 <td>
 
                     <input name="image" id="image" type="hidden" value="<?php echo esc_attr($item['image']) ?>" required>
                     <?php if ($item['id'] == 0 || empty($item['image'])) { ?>
                         <a href="javascript:void(0);" id="skye-app-change-image" style="cursor: pointer; display: inline-block;"></a>
-                        <button type="button" id="skye-app-select-image" class="button">Select image</button>
-                        <button type="button" id="skye-app-remove-image" class="button button-primary" style="display: none;">Remove image</button>
+                        <button type="button" id="skye-app-select-image" class="button">Select <?php echo $s_label; ?></button>
+                        <button type="button" id="skye-app-remove-image" class="button button-primary" style="display: none;">Remove <?php echo $s_label; ?></button>
                     <?php } else { ?>
                         <?php
                         $banner_image = wp_get_attachment_image_src($item['image'], null);
                         if (!$banner_image)
                             $banner_image = plugin_dir_url(__DIR__) . "assets/icons8_image_500px.png";
                         ?>
-                        <a href="#" id="skye-app-change-image" style="cursor: pointer; display: inline-block;"><img style="width: auto; heigth: auto; max-height: 200px; border: 1px solid #dfdfdf;" src="<?php echo  $banner_image[0]; ?>" /></a>
-                        <button type="button" id="skye-app-remove-image" class="button button-primary">Remove image</button>
-                        <button type="button" id="skye-app-select-image" class="button" style="display: none;">Select image</button>
+
+                        <a href="#" id="skye-app-change-image" style="cursor: pointer; display: inline-block;">
+                            <?php if ($banner_type == "video") { ?>
+
+                                <video style="width: auto; height: auto; max-height: 200px; border: 1px solid #dfdfdf;" controls>
+                                    <source src="<?php echo  wp_get_attachment_url($item['image']); ?>" type="video/mp4">
+                                </video>
+                            <?php } else { ?>
+                                <img style="width: auto; height: auto; max-height: 200px; border: 1px solid #dfdfdf;" src="<?php echo  $banner_image[0]; ?>" />
+                            <?php } ?>
+
+                        </a>
+                        <button type="button" id="skye-app-remove-image" class="button button-primary">Remove <?php echo $s_label; ?></button>
+                        <button type="button" id="skye-app-select-image" class="button" style="display: none;">Select <?php echo $s_label; ?></button>
                     <?php } ?>
                 </td>
             </tr>
@@ -66,45 +85,45 @@ function skye_app_banners_form_meta_box_handler($item)
                 </th>
                 <td>
                     <select id="on-click-to" name="on_click_to" style="width: 95%" class="code">
-                    <option value="none" <?php echo ($item['on_click_to'] == "none") ? "selected":""; ?>>None</option>
-						<option value="shop" <?php echo ($item['on_click_to'] == "shop") ? "selected":""; ?>>Shop</option>
-						<option value="category" <?php echo ($item['on_click_to'] == "category") ? "selected":""; ?>>Category</option>
-						<option value="url" <?php echo ($item['on_click_to'] == "url") ? "selected":""; ?>>URL</option>
-					</select>
+                        <option value="none" <?php echo ($item['on_click_to'] == "none") ? "selected" : ""; ?>>None</option>
+                        <option value="shop" <?php echo ($item['on_click_to'] == "shop") ? "selected" : ""; ?>>Shop</option>
+                        <option value="category" <?php echo ($item['on_click_to'] == "category") ? "selected" : ""; ?>>Category</option>
+                        <option value="url" <?php echo ($item['on_click_to'] == "url") ? "selected" : ""; ?>>URL</option>
+                    </select>
                 </td>
             </tr>
-            <tr class="form-field" id="categories-row" style="display: <?php echo ($item['on_click_to'] == "category") ? "dull":"none"; ?>;">
+            <tr class="form-field" id="categories-row" style="display: <?php echo ($item['on_click_to'] == "category") ? "dull" : "none"; ?>;">
                 <th valign="top" scope="row">
                     <label for="categories"><?php _e('Category', 'cltd_example') ?></label>
                 </th>
                 <td>
-                    <select id="categories" name="category" style="width: 95%"  class="code" required>
-						<?php
+                    <select id="categories" name="category" style="width: 95%" class="code" required>
+                        <?php
 
-                            $categories = get_categories( array(
-                                'taxonomy' => 'product_cat',
-                                'orderby' => 'menu_order',
-                                'show_count' => 1,
-                                'pad_counts' => 1,
-                                'hierarchical' => 1,
-                                'title_li' => '',
-                                'hide_empty' => 0,
-                            ) );
-                            
-                            foreach ($categories as $category) { ?>
-                                <option value="<?php echo $category->slug; ?>" <?php echo ($item['category'] == $category->slug) ? "selected":""; ?>><?php echo $category->name; ?></option>
-                           <?php }
+                        $categories = get_categories(array(
+                            'taxonomy' => 'product_cat',
+                            'orderby' => 'menu_order',
+                            'show_count' => 1,
+                            'pad_counts' => 1,
+                            'hierarchical' => 1,
+                            'title_li' => '',
+                            'hide_empty' => 0,
+                        ));
 
-                         ?>
-					</select>
+                        foreach ($categories as $category) { ?>
+                            <option value="<?php echo $category->slug; ?>" <?php echo ($item['category'] == $category->slug) ? "selected" : ""; ?>><?php echo $category->name; ?></option>
+                        <?php }
+
+                        ?>
+                    </select>
                 </td>
             </tr>
-            <tr class="form-field" id="url-row" style="display: <?php echo ($item['on_click_to'] == "url") ? "dull":"none"; ?>;">
+            <tr class="form-field" id="url-row" style="display: <?php echo ($item['on_click_to'] == "url") ? "dull" : "none"; ?>;">
                 <th valign="top" scope="row">
                     <label for="url"><?php _e('URL', 'cltd_example') ?></label>
                 </th>
                 <td>
-                    <input type="url" id="url" name="url" style="width: 95%"  class="code" placeholder="URL" value="<?php echo $item['url']; ?>">
+                    <input type="url" id="url" name="url" style="width: 95%" class="code" placeholder="URL" value="<?php echo $item['url']; ?>">
                 </td>
             </tr>
         </tbody>
@@ -129,7 +148,7 @@ function skye_app_banners_form_meta_box_handler($item)
     </script>
 
 
-    <?php
+<?php
 }
 
 /**
@@ -208,17 +227,27 @@ class Skye_App_Banners_List_Table extends WP_List_Table
         // also notice how we use $this->_args['singular'] so in this example it will
         // be something like &person=2
         $actions = array(
-            'edit' => sprintf('<a href="?page=skye_edit_banner&id=%s&banner_type=%s&redirect=%s">%s</a>', $item['ID'], $this->banner_type, urlencode(admin_url( 'admin.php?page=' . $_REQUEST['page'])), __('Edit', 'cltd_example')),
+            'edit' => sprintf('<a href="?page=skye_edit_banner&id=%s&banner_type=%s&redirect=%s">%s</a>', $item['ID'], $this->banner_type, urlencode(admin_url('admin.php?page=' . $_REQUEST['page'])), __('Edit', 'cltd_example')),
             'delete' => sprintf('<a href="?page=%s&action=delete&id=%s">%s</a>', $_REQUEST['page'], $item['ID'], __('Delete', 'cltd_example')),
         );
 
+      
+        if ($this->banner_type == "video") {
+            return sprintf(
+                '%s %s',
+                "<video style='width: auto; heigth: auto; max-height: 200px; border: 1px solid #dfdfdf;' controls><source src='" . wp_get_attachment_url($item['image']) . "' type='video/mp4'></video>",
+                $this->row_actions($actions)
+            );
+        }
+
+        //else image
         $banner_image = wp_get_attachment_image_src($item['image'], null);
         if (!$banner_image)
             $banner_image = plugin_dir_url(__DIR__) . "assets/icons8_image_500px.png";
 
         return sprintf(
             '%s %s',
-            "<img src='" . $banner_image[0] . "' style='width: auto; heigth: auto; max-height: 200px; border: 1px solid #dfdfdf;'>",
+            "<img src='" . $banner_image[0] . "' style='width: auto; heigth: auto; max-height: 200px; border: 1px solid #dfdfdf;'/>",
             $this->row_actions($actions)
         );
     }
@@ -314,7 +343,7 @@ class Skye_App_Banners_List_Table extends WP_List_Table
      */
     function prepare_items()
     {
-        
+
         global $wpdb;
         $table_name = $wpdb->prefix . 'skye_app_banners'; // do not forget about tables prefix
 

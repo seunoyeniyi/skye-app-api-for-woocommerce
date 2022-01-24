@@ -1,4 +1,3 @@
-
 <?php
 if (isset($_GET['clear_customers_cart'])) {
 	global $wpdb;
@@ -48,12 +47,12 @@ if ($_SERVER['REQUEST_METHOD'] == "POST" && isset($_POST['save-app'])) {
 		<div class="welcome-panel-column-container">
 			<div class="welcome-panel-column">
 				<h3>Get Started</h3>
-				<a class="button button-primary button-hero load-customize" href="<?php echo admin_url('admin.php?page=skye-app-banner-slides-list'); ?>">Update App Banners</a>
+				<a class="button button-primary button-hero load-customize" href="<?php echo admin_url('admin.php?page=skye-app-banner-slides'); ?>">Update App Banners</a>
 			</div>
 			<div class="welcome-panel-column">
 				<h3>Next Steps</h3>
 				<ul>
-					<li><span class="dashicons dashicons-cart"></span> <a href="<?php echo admin_url('admin.php?page=skye-app-delivery-drivers'); ?>">Delivery Drivers</a></li>
+					<li><span class="dashicons dashicons-bell"></span> <a href="<?php echo admin_url('admin.php?page=skye-app-push-notification'); ?>">Send Push Notification</a></li>
 					<!-- <li><a href="http://localhost/wp-admin/post-new.php?post_type=page" class="welcome-icon welcome-add-page">Add additional pages</a></li> -->
 					<!-- <li><a href="http://localhost/" class="welcome-icon welcome-view-site">View your site</a></li> -->
 				</ul>
@@ -141,14 +140,14 @@ if ($_SERVER['REQUEST_METHOD'] == "POST" && isset($_POST['save-app'])) {
 								<input name="enable_grid_banners" id="enable_grid_banners" type="checkbox" class="" <?php echo (get_option( "sk_enable_grid_banners", 0)) ? "checked" : ""; ?>> Enable</label>
 					</td>
 			</tr>
-			<!--NOT AVAILABLE FOR NOW <tr valign="top" class="">
+			<tr valign="top" class="">
 					<th scope="row" class="titledesc">Video Banners</th>
 					<td class="">
 							<legend class="screen-reader-text"><span>Enable</span></legend>
 							<label for="enable_video_banners">
 								<input name="enable_video_banners" id="enable_video_banners" type="checkbox" class="" <?php echo (get_option( "sk_enable_video_banners", 0)) ? "checked" : ""; ?>> Enable</label>
 					</td>
-			</tr> -->
+			</tr>
 			</tbody>
 		</table>
 		<h2>Push Notification</h2>

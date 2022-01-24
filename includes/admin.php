@@ -40,9 +40,9 @@ add_action("admin_menu", function () {
     
     add_submenu_page("skye-app", "Grid Banners", "Grid Banners", "manage_options", "skye-app-banner-grid", function() { $banner_type = "grid"; include(plugin_dir_path(__FILE__) . 'pages/banners/banners.php'); }, 7);
     
-    //NOT AVAILABLE FOR NOW::: add_submenu_page("skye-app", "Video Banners", "Video Banners", "manage_options", "skye-app-banner-video", function() { $banner_type = "video"; include(plugin_dir_path(__FILE__) . 'pages/banners/banners.php'); }, 9);
+    add_submenu_page("skye-app", "Video Banners", "Video Banners", "manage_options", "skye-app-banner-video", function() { $banner_type = "video"; include(plugin_dir_path(__FILE__) . 'pages/banners/banners.php'); }, 9);
     
-    add_submenu_page("skye-app", "Delivery Drivers", "Delivery Drivers", "manage_options", "skye-app-delivery-drivers", function() { include(plugin_dir_path(__FILE__) . 'pages/delivery-drivers.php'); }, 10);
+    //add_submenu_page("skye-app", "Delivery Drivers", "Delivery Drivers", "manage_options", "skye-app-delivery-drivers", function() { include(plugin_dir_path(__FILE__) . 'pages/delivery-drivers.php'); }, 10);
 
 });
 

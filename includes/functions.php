@@ -186,7 +186,7 @@ if (!function_exists('sk_get_product_array')) {
     }
 }
 if (!function_exists('sk_get_simple_product_array')) {
-    function sk_get_simple_product_array($product_id, $user_id = null, $hide_description = false) {
+    function sk_get_simple_product_array($product_id, $user_id = null, $hide_description = false, $show_variation = false) {
     $product = wc_get_product($product_id);
 
     //categories
@@ -203,56 +203,59 @@ if (!function_exists('sk_get_simple_product_array')) {
     //     $tags[] = get_term_by('id', $tag_id, 'product_tag');
     // }
 
-    // //setup attributes
-    // $attributes = $product->get_attributes();
-    // // die(print_r($data['kdl'] = $product->get_attribute("pa_size")));
-    // $return_attributes = array();
-    // if ($product->is_type('variation')) {
-    //     $return_attributes['terms'] = $attributes;
-    //     $return_attributes['selected'] = array();
-    //     foreach($attributes as $key => $value) {
-    //         $return_attributes['selected'][] = array(
-    //             'label' => wc_attribute_label($key),
-    //             'selected' => $product->get_attribute($key),
-    //         );
-    //     }
+    //setup attributes
+    $attributes = $product->get_attributes();
+    // die(print_r($data['kdl'] = $product->get_attribute("pa_size")));
+    $return_attributes = array();
 
-    // } else {
-    // foreach ($attributes as $attr => $attribute) {
-    //     $data = $attribute->get_data();
-    //     $data['label'] = wc_attribute_label($data['name']);
-    //     $options = $attribute->get_options();
-    //     // $data['print_echo'] = $attribute->get_terms();
-    //     $data['options'] = array(); //clear default array;
-    //     if ($attribute->is_taxonomy()) {
-    //         foreach((array)$attribute->get_terms() as $term) {
-    //             $data['options'][] = array(
-    //                 'name' => $term->slug,
-    //                 'value' => $term->name,
-    //             );
-    //         }
-    //     } else {
-    //         foreach($options as $opt) {
-    //             $data['options'][] = array(
-    //                 'name' => $opt,
-    //                 'value' => $opt,
-    //             );
-    //         }
-    //     }
-    //     $return_attributes[] = $data;
-    // }
-    // }
-    // //setup default attributes
-    // $return_default_attributes = array();
-    // $default_attributes = $product->get_default_attributes();
-    // foreach ($default_attributes as $attr => $attribute) {
-    //     $data = $attribute->get_data();
-    //     $data['label'] = wc_attribute_label($data['name']);
-    //     $return_default_attributes[] = $data;
-    // }
+    if ($product->is_type('variation')) {
+        $return_attributes['terms'] = $attributes;
+        $return_attributes['selected'] = array();
+        foreach($attributes as $key => $value) {
+            $return_attributes['selected'][] = array(
+                'label' => wc_attribute_label($key),
+                'selected' => $product->get_attribute($key),
+            );
+        }
+
+    } else {
+    foreach ($attributes as $attr => $attribute) {
+        $data = $attribute->get_data();
+        $data['label'] = wc_attribute_label($data['name']);
+        $options = $attribute->get_options();
+        // $data['print_echo'] = $attribute->get_terms();
+        $data['options'] = array(); //clear default array;
+        if ($attribute->is_taxonomy()) {
+            foreach((array)$attribute->get_terms() as $term) {
+                $data['options'][] = array(
+                    'name' => $term->slug,
+                    'value' => $term->name,
+                );
+            }
+        } else {
+            foreach($options as $opt) {
+                $data['options'][] = array(
+                    'name' => $opt,
+                    'value' => $opt,
+                );
+            }
+        }
+        $return_attributes[] = $data;
+    }
+    }
+    //setup default attributes
+    $return_default_attributes = array();
+    $default_attributes = $product->get_default_attributes();
+    foreach ($default_attributes as $attr => $attribute) {
+		if (is_string($attribute))
+			continue;
+        $data = $attribute->get_data();
+        $data['label'] = wc_attribute_label($data['name']);
+        $return_default_attributes[] = $data;
+    }
 
 
-    return array(
+    $the_return = array(
         // General Info
         'ID' => $product->get_id(),
         // 'title' => $product->get_title(),
@@ -299,12 +302,10 @@ if (!function_exists('sk_get_simple_product_array')) {
         // 'children' => $product->get_children(),
         'product_type' => $product->get_type(),
         'in_wishlist' => sk_in_wishlist($user_id, $product->get_id()),
-        // 'attributes' => $return_attributes,
-        // 'default_attributes' => $return_default_attributes,
-        //'attribute' => $product->get_attribute('attributeid'), //get specific attribute value
 
-        //Product available variations
-        // 'variations' => sk_get_product_variations($product->get_id()),
+        //attributes keys will be added outside this variable
+
+        //Product available variations - key will be added conditionally outside this variable
 
         // Product Taxonomies
         // 'categories' => $product->get_categories(), //return categires html links
@@ -332,6 +333,16 @@ if (!function_exists('sk_get_simple_product_array')) {
         // 'review_count' => $product->get_review_count()
 
     );
+
+    if ($show_variation) {
+        $the_return['attributes'] = $return_attributes;
+        $the_return['default_attributes'] = $return_default_attributes;
+       // $the_return['attribute'] = $product->get_attribute('attributeid'); //get specific attribute value
+        $the_return['variations'] = sk_get_product_variations($product->get_id());
+    }
+
+    return $the_return;
+
     }
 }
 if (!function_exists('sk_user_cart_exists')) {
@@ -1463,7 +1474,7 @@ if (!function_exists("sk_get_wishlist")) {
     }
 }
 if (!function_exists("sk_wishlist_products")) {
-    function sk_wishlist_products($user_id, $data, $hide_description = false) {
+    function sk_wishlist_products($user_id, $data, $hide_description = false, $show_variation) {
 
         $paged = isset($data['paged']) ? $data['paged'] : 1;
         $post_per_page = isset($data['per_page']) ? $data['per_page'] : 20;
@@ -1516,7 +1527,7 @@ if (!function_exists("sk_wishlist_products")) {
         
         while($query->have_posts()) {
             $query->the_post();
-            $product_array["results"][] = sk_get_simple_product_array(get_the_ID(), $user_id, $hide_description);
+            $product_array["results"][] = sk_get_simple_product_array(get_the_ID(), $user_id, $hide_description, $show_variation);
             }
 
         // add pagination

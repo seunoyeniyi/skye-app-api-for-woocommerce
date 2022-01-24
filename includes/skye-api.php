@@ -508,6 +508,7 @@ add_action( 'rest_api_init', function() {
             $search = isset($data['search']) ? $data['search'] : null;
 			$tag = isset($data['tag']) ? $data['tag'] : null;
 			$hide_description = isset($data['hide_description']);
+            $show_variation = isset($data['show_variation']);
         
 
             $query_args = array(
@@ -591,7 +592,7 @@ add_action( 'rest_api_init', function() {
             
             while($query->have_posts()) {
                 $query->the_post();
-                $product_array["results"][] = sk_get_simple_product_array(get_the_ID(), isset($data['user_id']) ? $data['user_id'] : null, $hide_description);
+                $product_array["results"][] = sk_get_simple_product_array(get_the_ID(), isset($data['user_id']) ? $data['user_id'] : null, $hide_description, $show_variation);
             }
     
             //add brand key (if site has brand taxonomy)
@@ -1304,7 +1305,7 @@ add_action( 'rest_api_init', function() {
             if ($result && count($result) > 0) {
                 foreach ($result as $item) {
                     $arrays['results'][] = array(
-                        'image' => wp_get_attachment_image_src( $item->image, null)[0],
+                        'image' => ($item->banner_type == "video") ? wp_get_attachment_url($item->image) : wp_get_attachment_image_src( $item->image, null)[0],
                         'title' => $item->title,
                         'description' => $item->description,
                         'on_click_to' => $item->on_click_to,
@@ -1328,8 +1329,9 @@ add_action( 'rest_api_init', function() {
         'callback' => function($data) {
             $user_id =  $data['user_id'];
             $hide_description = isset($data['hide_description']);
+            $show_variation = isset($data['show_variation']);
 
-            return sk_wishlist_products($user_id, $data, $hide_description);
+            return sk_wishlist_products($user_id, $data, $hide_description, $show_variation);
         }
     ));
     register_rest_route( SKYE_API_NAMESPACE_V1, '/add-to-wishlist/(?P<user_id>.*?)/(?P<product_id>.*?)', array(

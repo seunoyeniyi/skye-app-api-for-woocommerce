@@ -1,4 +1,4 @@
-jQuery(function($) {
+jQuery(document).ready(function($) {
     // FOR BANNER ONE UPLAOD
     // on upload button click
 	// $('body').on( 'click', '.banner-upload-btn', function(e){
@@ -70,19 +70,23 @@ jQuery(function($) {
 
 		
 		var custom_uploader = wp.media({
-			title: 'Insert image',
+			title: 'Insert ' + $('#media-type').val(),
 			library : {
 				// uploadedTo : wp.media.view.settings.post.id, // attach to the current post?
-				type : 'image'
+				type : $('#media-type').val()
 			},
 			button: {
-				text: 'Use this image' // button label text
+				text: 'Use this ' + $('#media-type').val() // button label text
 			},
 			multiple: false
 		}).on('select', function() { // it also has "open" and "close" events
 			var attachment = custom_uploader.state().get('selection').first().toJSON();
 			$("#skye-app-banner-form #image").val(attachment.id);
-			$("a#skye-app-change-image").html('<img style="width: auto; heigth: auto; max-height: 200px; border: 1px solid #dfdfdf;" src="' + attachment.url + '">');
+			if ($('#media-type').val() == "video") {
+				$("a#skye-app-change-image").html('<video  style="width: auto; height: auto; max-height: 200px; border: 1px solid #dfdfdf;" controls><source src="' + attachment.url + '" type="video/mp4"></video>');
+			} else {
+				$("a#skye-app-change-image").html('<img style="width: auto; heigth: auto; max-height: 200px; border: 1px solid #dfdfdf;" src="' + attachment.url + '">');
+			}
             $("#skye-app-select-image").hide();
 			$("#skye-app-remove-image").show();
 		}).open();
