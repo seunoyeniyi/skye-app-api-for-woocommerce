@@ -56,10 +56,25 @@ if (!function_exists('sk_get_product_array')) {
         $data['options'] = array(); //clear default array;
         if ($attribute->is_taxonomy()) {
             foreach((array)$attribute->get_terms() as $term) {
-                $data['options'][] = array(
-                    'name' => $term->slug,
-                    'value' => $term->name,
-                );
+                //check if option name exists in available variations before adding
+				$in_variation = false;
+				foreach(sk_get_product_variations($product->get_id()) as $variation) {
+					foreach ($variation['attributes'] as $attribute) {
+                        if (isset($attribute[$data['name']])) {
+                            if ($attribute[$data['name']] == $term->slug || $attribute[$data['name']] == $term->name) {
+                                $in_variation = true;
+                            }
+                        }
+						
+					}
+				}
+				
+				if ($in_variation) {
+                    $data['options'][] = array(
+                        'name' => $term->slug,
+                        'value' => $term->name,
+                    );
+                }
             }
         } else {
             foreach($options as $opt) {
@@ -227,10 +242,25 @@ if (!function_exists('sk_get_simple_product_array')) {
         $data['options'] = array(); //clear default array;
         if ($attribute->is_taxonomy()) {
             foreach((array)$attribute->get_terms() as $term) {
-                $data['options'][] = array(
-                    'name' => $term->slug,
-                    'value' => $term->name,
-                );
+                //check if option name exists in available variations before adding
+				$in_variation = false;
+				foreach(sk_get_product_variations($product->get_id()) as $variation) {
+					foreach ($variation['attributes'] as $attribute) {
+                        if (isset($attribute[$data['name']])) {
+                            if ($attribute[$data['name']] == $term->slug || $attribute[$data['name']] == $term->name) {
+                                $in_variation = true;
+                            }
+                        }
+						
+					}
+				}
+				
+				if ($in_variation) {
+                    $data['options'][] = array(
+                        'name' => $term->slug,
+                        'value' => $term->name,
+                    );
+                }
             }
         } else {
             foreach($options as $opt) {
