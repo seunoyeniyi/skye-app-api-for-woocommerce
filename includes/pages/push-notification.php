@@ -7,15 +7,21 @@
 if ($_SERVER['REQUEST_METHOD'] == "POST" && isset($_POST['notify'])) {
     $title = $_POST['notification_title'];
     $text = $_POST['notification_text'];
-    $devices = array();
+    $option = get_option( "sk_devices", "[]"); //array();
+    $devices = json_decode($option, true);
     
     $users = get_users(array(
         'meta_key'     => 'sk_device_id',
     ));
 
     foreach ($users as $user) {
-        $devices[] = get_user_meta( $user->ID, 'sk_device_id', true);
+        $user_device = get_user_meta( $user->ID, 'sk_device_id', true);
+        if (!in_array($user_device, $devices)) {
+            $devices[] = $user_device;
+        }
     }
+
+   
 
     $push = sk_push_notification($devices, array(
         'title' => $title,
@@ -23,7 +29,7 @@ if ($_SERVER['REQUEST_METHOD'] == "POST" && isset($_POST['notify'])) {
     ));
 
    if ($push) { ?>
-    <div id="message" class="updated inline"><p style="text-align: center;"><strong>Notification sent to <?php echo count($users); ?> customers</strong></p></div>
+    <div id="message" class="updated inline"><p style="text-align: center;"><strong>Notification sent to <?php echo count($devices); ?> customers</strong></p></div>
   <?php } else { ?>
     <div id="message" class="updated inline"><p style="text-align: center;"><strong>Error... Unable to send notification, please contact the technical person in charge.</strong></p></div>
    <?php } ?>

@@ -10,6 +10,9 @@
 if(!defined('ABSPATH')) { exit; }
 
 define("SKYE_API_NAMESPACE_V1", "skye-api/v1");
+define("SKYE_API_NAMESPACE_V2", "skye-api/v2");
+
+
 function find_matching_product_variation_id($product_id, $attributes)
 {
     return (new \WC_Product_Data_Store_CPT())->find_matching_product_variation(

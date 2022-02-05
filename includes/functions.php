@@ -1296,6 +1296,8 @@ if (!function_exists("sk_update_cart_shipping")) {
         $cart_json = json_decode(sk_get_cart_value($user_id), true);
 
         if ($provider == "woocommerce") {
+
+
             //get zone
             $zone = WC_Shipping_Zones::get_zone_matching_package(array(
                 'destination' => array(
@@ -1339,6 +1341,7 @@ if (!function_exists("sk_update_cart_shipping")) {
                 //add the shipping classes cost to the shipping cost
                 
 				$method_cost = is_numeric($method->cost) ? $method->cost : 0;
+
 				if ($method->id == "free_shipping") {
 					if ($method->requires == "min_amount") {
 						if ($cart_json["subtotal"] >= $method->min_amount) {
@@ -1362,6 +1365,8 @@ if (!function_exists("sk_update_cart_shipping")) {
             $shipping_method = (isset($cart_json['shipping_methods']['flat_rate'])) ? 'flat_rate' : null; //default method else null
             $cart_json['shipping_method'] = $shipping_method;
             $cart_json['shipping_cost'] = (!is_null($shipping_method)) ? $cart_json['shipping_methods'][$shipping_method]['cost'] : 0;
+
+
         } else {
             $cart_json['shipping_method'] = "by_" . $provider;
             $cart_json['shipping_methods'] = null;
@@ -1394,11 +1399,103 @@ if (!function_exists("sk_update_cart_shipping")) {
         ));
     }
 }
+if (!function_exists("sk_update_cart_shipping_v2")) {
+    function sk_update_cart_shipping_v2($user_id, $country_code, $state_code, $postcode = '', $provider = "woocommerce", $shipping_provider_cost = 0)
+    {
+		require_once(WC_ABSPATH . 'includes/wc-cart-functions.php');
+        require_once(WC_ABSPATH . 'includes/wc-notice-functions.php');
+        global $wpdb, $woocommerce;
+        $woocommerce = WC();
+        $woocommerce->session = new WC_Session_Handler();
+        $woocommerce->session->init();
+        $woocommerce->customer = new WC_Customer();
+        $woocommerce->cart = new WC_Cart();
+
+        $cart_table = $wpdb->prefix . "skye_carts";
+        //update
+
+        $cart_json = json_decode(sk_get_cart_value($user_id), true);
+
+        if ($provider == "woocommerce") {
+
+        $woocommerce->cart->empty_cart();
+
+        foreach ($cart_json['items'] as $item) {
+            $woocommerce->cart->add_to_cart($item['ID']);
+        }
+        
+
+        $woocommerce->cart->get_customer()->set_shipping_country($country_code);
+        $woocommerce->cart->get_customer()->set_shipping_state($state_code);
+        $woocommerce->cart->get_customer()->set_shipping_postcode($postcode);
+
+
+        
+        WC()->cart->calculate_shipping();
+
+        $cart_json['shipping_methods'] = array();
+
+        foreach (WC()->session->get('shipping_for_package_0')['rates'] as $shipping_rate_id => $shipping_rate) {
+            $cart_json['shipping_methods'][]  = array(
+                'rate_id'     => $shipping_rate->get_id(), // same thing that $shipping_rate_id variable (combination of the shipping method and instance ID)
+                'id'   => $shipping_rate->get_method_id(), // The shipping method slug
+                'instance_id' => $shipping_rate->get_instance_id(), // The instance ID
+                'title'  => $shipping_rate->get_label(), // The label name of the method
+                'cost'        => $shipping_rate->get_cost(), // The cost without tax
+                'tax_cost'    => $shipping_rate->get_shipping_tax(), // The tax cost
+                'taxes'       => $shipping_rate->get_taxes(), // The taxes details (array)
+            );
+        }
+        
+        $shipping_method = (isset($cart_json['shipping_methods'][0])) ? $cart_json['shipping_methods'][0]['rate_id'] : null; //default method else null
+        $cart_json['shipping_method'] = $shipping_method;
+        $cart_json['shipping_cost'] = (isset($cart_json['shipping_methods'][0])) ? $cart_json['shipping_methods'][0]['cost'] : 0;
+
+
+        } else {
+            $cart_json['shipping_method'] = "by_" . $provider;
+            $cart_json['shipping_methods'] = null;
+            $cart_json['shipping_cost'] = $shipping_provider_cost;
+        }
+
+
+        //calculate total
+        $subtotal = $cart_json['subtotal'];
+        $shipping_cost = $cart_json['shipping_cost'];
+        $coupon_discount = (isset($cart_json['coupon_discount'])) ? $cart_json['coupon_discount'] : 0;
+        $cart_json['total'] = ($subtotal + $shipping_cost) - $coupon_discount;
+
+        //deduct reward discount if applied
+        if ($cart_json['apply_reward']) {
+            $cart_json['total'] -= $cart_json['reward_discount'];
+        }
+
+        if ($shipping_cost > 0 || $cart_json['shipping_method'] == "free_shipping") {
+            $cart_json['has_shipping'] = true;
+        } else {
+            $cart_json['has_shipping'] = false;
+        }
+
+
+        return $wpdb->update($cart_table, array(
+            'cart_value' => json_encode($cart_json),
+        ), array(
+            'user' => $user_id
+        ));
+    }
+}
 if (!function_exists("sk_update_cart_shipping_by_name")) {
     function sk_update_cart_shipping_by_name($user_id, $country_name, $state_name, $postcode, $provider = "woocommerce", $shipping_provider_cost = 0) {
         $country_code = sk_get_country_code($country_name);
         $state_code = sk_get_state_code($country_code, $state_name);
         return sk_update_cart_shipping($user_id, $country_code, $state_code, $postcode, $provider, $shipping_provider_cost);
+    }
+}
+if (!function_exists("sk_update_cart_shipping_by_name_v2")) {
+    function sk_update_cart_shipping_by_name_v2($user_id, $country_name, $state_name, $postcode = '', $provider = "woocommerce", $shipping_provider_cost = 0) {
+        $country_code = sk_get_country_code($country_name);
+        $state_code = sk_get_state_code($country_code, $state_name);
+        return sk_update_cart_shipping_v2($user_id, $country_code, $state_code, $postcode, $provider, $shipping_provider_cost);
     }
 }
 if (!function_exists("sk_change_cart_shipping_method")) {
@@ -1418,6 +1515,51 @@ if (!function_exists("sk_change_cart_shipping_method")) {
             if (isset($shipping_methods[$shipping_method])) {
                 $method = $shipping_methods[$shipping_method];
                 $cart_json['shipping_method'] = $shipping_method;
+                $cart_json['shipping_cost'] = isset($method['cost']) ? $method['cost'] : 0;
+            }
+        } 
+
+        //calculate total
+        $shipping_cost = $cart_json['shipping_cost'];
+        $cart_json['total'] = ($subtotal + $shipping_cost) - $coupon_discount;
+
+        //deduct reward discount if applied
+        if ($cart_json['apply_reward']) {
+            $cart_json['total'] -= $cart_json['reward_discount'];
+        }
+
+        if ($shipping_cost > 0 || $cart_json['shipping_method'] == "free_shipping") {
+            $cart_json['has_shipping'] = true;
+        } else {
+            $cart_json['has_shipping'] = false;
+        }
+
+        //save data
+        return $wpdb->update($cart_table, array(
+            'cart_value' => json_encode($cart_json),
+        ), array(
+            'user' => $user_id
+        ));
+    }
+}
+if (!function_exists("sk_change_cart_shipping_method_v2")) {
+    function sk_change_cart_shipping_method_v2($user_id, $shipping_method) {
+        global $wpdb;
+        $cart_table = $wpdb->prefix . "skye_carts";
+        //update
+
+        $cart_json = json_decode(sk_get_cart_value($user_id), true);
+
+        $subtotal = $cart_json['subtotal'];
+        $coupon_discount = (isset($cart_json['coupon_discount'])) ? $cart_json['coupon_discount'] : 0;
+
+        //update shipping_method and cost
+        if (isset($cart_json['shipping_methods'])) {
+            $shipping_methods = $cart_json['shipping_methods'];
+            $index = array_search($shipping_method, array_column($shipping_methods, 'rate_id'));
+            if (isset($shipping_methods[$index])) {
+                $method = $shipping_methods[$index];
+                $cart_json['shipping_method'] = $method['rate_id'];
                 $cart_json['shipping_cost'] = isset($method['cost']) ? $method['cost'] : 0;
             }
         } 

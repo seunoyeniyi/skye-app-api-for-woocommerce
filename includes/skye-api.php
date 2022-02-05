@@ -565,6 +565,7 @@ add_action( 'rest_api_init', function() {
                 );
             }
 
+            //Colour
             if (isset($data['color'])) {
                 $color = $data['color'];
                 $query_args['meta_query'] = array( array(
@@ -577,6 +578,23 @@ add_action( 'rest_api_init', function() {
                         'taxonomy'        => 'pa_color',
                         'field'           => 'slug',
                         'terms'           =>  array($color),
+                        'operator'        => 'IN',
+                    ) );
+            }
+
+            //Size
+            if (isset($data['size'])) {
+                $size = $data['size'];
+                $query_args['meta_query'] = array( array(
+                    'key' => '_visibility',
+                    'value' => array('catalog', 'visible'),
+                    'compare' => 'IN',
+                ) );
+
+                $query_args['tax_query'] = array( array(
+                        'taxonomy'        => 'pa_size',
+                        'field'           => 'slug',
+                        'terms'           =>  array($size),
                         'operator'        => 'IN',
                     ) );
             }
@@ -720,6 +738,8 @@ add_action( 'rest_api_init', function() {
             'permission_callback' => function() {return true; },
         'callback' => function($data) {
             global $wpdb;
+            
+
             $cart_table = $wpdb->prefix . "skye_carts";
             $user_id = $data['user']; //user real ID or hash for unknown user
             
@@ -756,7 +776,7 @@ add_action( 'rest_api_init', function() {
             ));
         }
 
-            
+
             
             return $return_array;
         }
@@ -1448,7 +1468,88 @@ add_action( 'rest_api_init', function() {
             return $array;
         }
     ));
+    //add device
+    register_rest_route( SKYE_API_NAMESPACE_V1, '/add-device/(?P<user_id>.*?)', array(
+        'methods' => 'POST',
+        'permission_callback' => function() { return true; },
+        'callback' => function($data) {
+            $device_id = $data["device"];
+            $user_id = $data['user_id'];
 
+            
+            
+            $array = array(
+                "status" => "failed",
+                "user_device_saved" => false,
+                "device_saved" => false,
+                "device_id" => ""
+            );
+           
+            if (sk_user_exists($user_id)) {
+                if (update_user_meta( $user_id, "sk_device_id", $device_id)) {
+                    $array["status"] = "success";
+                    $array["user_device_saved"] = true;
+                }
+            }
+
+            //user exists OR NOT all devices must be saved
+            $devices = get_option( "sk_devices", "[]");
+            $devices = json_decode($devices, true);
+
+            if (!in_array($device_id, $devices)) {
+                $devices[] = $device_id;
+            }
+
+            //save back the updated devices
+            if (update_option( "sk_devices", json_encode($devices))) {
+                $array["status"] = "success";
+                $array["device_saved"] = true;
+            }
+            
+
+            $array["device_id"] = $device_id;
+
+            return $array;
+        }
+    ));
+    //devices
+    register_rest_route( SKYE_API_NAMESPACE_V1, '/devices', array(
+        'methods' => 'GET',
+        'permission_callback' => function() { return true; },
+        'callback' => function($data) {
+           
+            $return_arr = array(
+                'users_with_device' => array(),
+                'devices' => array()
+            );
+
+            
+            $devices = get_option( "sk_devices", "[]");
+            $devices = json_decode($devices, true);
+            
+
+            //users with device
+            $users = get_users(array(
+                'meta_key'     => 'sk_device_id',
+            ));
+        
+            foreach ($users as $user) {
+                $user_device = get_user_meta( $user->ID, 'sk_device_id', true);
+                $return_arr["users_with_device"][] = array(
+                    "ID" => $user->ID,
+                    "device" =>  $user_device
+                );
+                
+                if (!in_array($user_device, $devices)) {
+                    $devices[] = $user_device;
+                }
+            }
+
+            $return_arr["devices"] = $devices;
+
+            return $return_arr;
+        }
+    ));
 
     //specific attributes name and values page
     register_rest_route( SKYE_API_NAMESPACE_V1, '/attributes', array(
@@ -1584,5 +1685,8 @@ add_action( 'rest_api_init', function() {
 
     //FOR DELIVERY API
     include(plugin_dir_path( __FILE__ ) . 'delivery-api.php');
+
+    //VERISON 2 UPDATE
+    include(plugin_dir_path( __FILE__ ) . 'skye-api-v2.php');
 
 });

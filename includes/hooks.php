@@ -239,6 +239,13 @@ add_action('wp_footer', function () {
                     $("div.storefront-handheld-footer-bar").hide();
                     $("#glt-translate-trigger").hide();
 
+                    $("script.yoast-schema-graph").remove();
+					$("a.cd-top.progress-wrap.active-progress, a.cd-top.progress-wrap").hide();
+					$("a.cd-top.progress-wrap.active-progress, a.cd-top.progress-wrap").remove();
+					$("div.fb_iframe_widget, div.fb_iframe_widget .iframe, html#facebook, div.fb_dialog_content, div.#fb-root").hide();
+					$("div.fb_iframe_widget, div.fb_iframe_widget .iframe, html#facebook, div.fb_dialog_content, div.#fb-root").remove();
+                        
+
                     /* FOR CUSTOM elements to hide, for #id use *id */
                     <?php if (isset($_GET['hide_elements'])) { $elements = str_replace("*", "#", $_GET['hide_elements']);
                          ?>
