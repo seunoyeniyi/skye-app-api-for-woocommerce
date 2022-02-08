@@ -116,7 +116,7 @@ if (!function_exists('sk_get_product_array')) {
         
     }, $comments);
 
-    return array(
+    $return_arr = array(
         // General Info
         'ID' => $product->get_id(),
         'title' => $product->get_title(),
@@ -198,6 +198,20 @@ if (!function_exists('sk_get_product_array')) {
         'comments' => $comments,
 
     );
+
+   
+    //for fix price - for now
+    if ($product->get_type() == "wooco") {
+        $wooco_items = $product->get_items();
+        $return_arr['wooco_items'] = array_map(function($item) use ($user_id) {
+            $item_id = $item['id'];
+            // $item_qty = $item['qty'];
+            return sk_get_simple_product_array($item_id, $user_id, true, true);
+        }, $wooco_items);
+    }
+
+    return $return_arr;
+
     }
 }
 if (!function_exists('sk_get_simple_product_array')) {
@@ -696,25 +710,17 @@ if (!function_exists('sk_cart_json_handler')) {
             $return_array['user'] = $user_id;
             // // cat conditional if
             $return_array['is_empty'] = false;
-            // $return_array['display_prices_including_tax'] = WC()->cart->display_prices_including_tax();
-
+           
             // // Get cart totals
             $return_array['contents_count'] = 1;
             $return_array['has_coupon'] = false;
             $return_array['has_shipping'] = false;
-            // $return_array['cart_subtotal'] = WC()->cart->get_cart_subtotal();
-            // $return_array['subtotal_ex_tax'] = WC()->cart->subtotal_ex_tax;
             $return_array['subtotal'] = $product->get_price() * $quantity;
             $return_array['total'] = $product->get_price() * $quantity;
             $return_array['coupon_discount'] = 0;
             $return_array['shipping_cost'] = 0;
-            // $return_array['displayed_subtotal'] = WC()->cart->get_displayed_subtotal();
-            // $return_array['coupons'] = WC()->cart->get_coupons();
-            // // $return_array['coupon_discount_amount'] = WC()->cart->get_coupon_discount_amount( 'coupon_code' );
-            // $return_array['fees'] = WC()->cart->get_fees();
-            // $return_array['discount_total'] = WC()->cart->get_discount_total();
-            // $return_array['total'] = WC()->cart->get_total();
-            // $return_array['total'] = WC()->cart->total;
+        
+            ###################//WOOCOMMERCE REWARD POINTS PLUGIN #####################
             //add points
             $return_array['points'] = 0;
             if (class_exists("WC_Points_Rewards_Manager")) {
@@ -746,30 +752,55 @@ if (!function_exists('sk_cart_json_handler')) {
                     $return_array['reward_discount'] = $current_user_points_value;
                 }
             }
-        
+            ###################//WOOCOMMERCE REWARD POINTS PLUGIN #####################
 
 
 
 
         //ITEMS in the cart
         $return_array['items'] = array();
-        $return_array['items'][] = array( //products added
-                    'ID' => $product_id,
-                    'quantity' => $quantity,
-                    'price' => $product->get_price(),
-                    'subtotal' => $product->get_price() * $quantity,
-                    'product_type' => $product->get_type(),
-                    'product_type' => $product->get_type(),
-                    'product_title' => $product->get_title(),
-                    'product_image' => wp_get_attachment_url($product->get_image_id()),
-                    'attributes' =>  $return_attributes,
-                    // 'whatever_attribute' => $product->get_attribute( 'whatever' ),
-                    // 'whatever_attribute_tax' => $product->get_attribute( 'pa_whatever' ),
-                    // 'any_attribute' => $cart_item['variation']['attribute_whatever'],
-                    // 'meta' => wc_get_formatted_cart_item_data( $cart_item ),
-                    // more single product info
-                    // 'product_info' => sk_get_product_array($cart_item['product_id']),
+        $new_row = array( //products added
+            'ID' => $product_id,
+            'quantity' => $quantity,
+            'price' => $product->get_price(),
+            'subtotal' => $product->get_price() * $quantity,
+            'product_type' => $product->get_type(),
+            'product_type' => $product->get_type(),
+            'product_title' => $product->get_title(),
+            'product_image' => wp_get_attachment_url($product->get_image_id()),
+            'attributes' =>  $return_attributes,
         );
+
+        ###################//WOO COMBO OFFER PLUGIN #####################
+        //Compacting with Woo Combo Offer - Plugin
+        //only for Fixed Proce Combo Offer
+        if ($product->get_type() == "wooco") {
+            
+            $new_row['price'] = $product->get_sale_price();
+            $new_row['subtotal'] = $product->get_sale_price();
+
+            $wooco_items = $product->get_items();
+            
+            $default_wooco_items_string = implode(',', array_map(function($arr) {
+                return $arr['id'] . '/' . $arr['qty'];
+            }, $wooco_items));
+
+            $new_row["wooco_ids"] = isset($data["wooco_ids"]) ? $data["wooco_ids"] : $default_wooco_items_string;
+
+            $new_row['wooco_items'] = array_map(function($item_str) use ($user_id) {
+                $item = explode('/', $item_str);
+                $item_id = $item[0];
+                // $item_qty = $item[1];
+                return sk_get_simple_product_array($item_id, $user_id, true, true);
+            }, explode(',', $new_row["wooco_ids"]));
+
+        }
+        ###################//WOO COMBO OFFER PLUGIN #####################
+ 
+
+        
+
+        $return_array['items'][] = $new_row;
 
     } else { //update the old json
         $return_array = json_decode($old_cart_json, true); //second parameter is true, to convert to array instead of object
@@ -794,7 +825,7 @@ if (!function_exists('sk_cart_json_handler')) {
         //search product in the items
         $search = sk_search_item_in_array($product_id, $return_array['items']);
 
-        if (!is_null($search)) { //update items
+        if (!is_null($search) && $product->get_type() != "wooco") { //update items
             if ($quantity > 0) { //update product in items
                 $return_array['items'][$search]['quantity'] = ($replace_qty) ? $quantity : ($return_array['items'][$search]['quantity'] + $quantity);
                 $return_array['items'][$search]['price'] = $product->get_price();
@@ -806,20 +837,49 @@ if (!function_exists('sk_cart_json_handler')) {
             }
         } else { //add to items
             if ($quantity > 0) {
-            $return_array['items'][] = array(
-                'ID' => $product_id,
-                'quantity' => $quantity,
-                'price' => $product->get_price(),
-                'subtotal' => $product->get_price() * $quantity,
-                'product_type' => $product->get_type(),
-                'product_title' => $product->get_title(),
-                'product_image' => wp_get_attachment_url($product->get_image_id()),
-                'attributes' =>  $return_attributes,
-            );
+                $new_row = array(
+                    'ID' => $product_id,
+                    'quantity' => $quantity,
+                    'price' => $product->get_price(),
+                    'subtotal' => $product->get_price() * $quantity,
+                    'product_type' => $product->get_type(),
+                    'product_title' => $product->get_title(),
+                    'product_image' => wp_get_attachment_url($product->get_image_id()),
+                    'attributes' =>  $return_attributes,
+                );
+
+                ###################//WOO COMBO OFFER PLUGIN #####################
+                //Compacting with Woo Combo Offer - Plugin
+                //only for Fixed Proce Combo Offer
+                if ($product->get_type() == "wooco") {
+                    
+                    $new_row['price'] = $product->get_sale_price();
+                    $new_row['subtotal'] = $product->get_sale_price();
+
+                    $wooco_items = $product->get_items();
+                    
+                    $default_wooco_items_string = implode(',', array_map(function($arr) {
+                        return $arr['id'] . '/' . $arr['qty'];
+                    }, $wooco_items));
+
+                    $new_row["wooco_ids"] = isset($data["wooco_ids"]) ? $data["wooco_ids"] : $default_wooco_items_string;
+
+                    $new_row['wooco_items'] = array_map(function($item_str) use ($user_id) {
+                        $item = explode('/', $item_str);
+                        $item_id = $item[0];
+                        // $item_qty = $item[1];
+                        return sk_get_simple_product_array($item_id, $user_id, true, true);
+                    }, explode(',', $new_row["wooco_ids"]));
+
+                }
+                ###################//WOO COMBO OFFER PLUGIN #####################
+
+                $return_array['items'][] = $new_row;
         } else {
             unset($return_array['items'][$search]);
             $return_array['items'] = array_values($return_array['items']); //reset the indexes
         }
+
         }
 
 
@@ -851,6 +911,8 @@ if (!function_exists('sk_cart_json_handler')) {
         $return_array['total'] = ($subtotal + $shipping_cost) - $coupon_discount;
 
         $return_array['has_shipping'] = (isset($return_array['has_shipping'])) ? $return_array['has_shipping'] : false;
+        
+        ###################//WOOCOMMERCE REWARD POINTS PLUGIN #####################
         //calculate points
         $points = 0;
         if (class_exists("WC_Points_Rewards_Manager")) {
@@ -882,7 +944,7 @@ if (!function_exists('sk_cart_json_handler')) {
                 $return_array['reward_discount'] = $current_user_points_value;
             }
         }
-
+        ###################//WOOCOMMERCE REWARD POINTS PLUGIN #####################
 
     }
 
@@ -1432,6 +1494,7 @@ if (!function_exists("sk_update_cart_shipping_v2")) {
 
         
         WC()->cart->calculate_shipping();
+
 
         $cart_json['shipping_methods'] = array();
 

@@ -636,15 +636,17 @@ add_action( 'rest_api_init', function() {
         'callback' => function($data) {
             $product_id = $data['id'];
             $related_product_per_page = isset($data['related_product_per_page']) ? $data['related_product_per_page'] : 10;
+            $user_id = isset($data['user']) ? $data['user'] : null;
+            if (isset($data['user_id'])) $user_id = $data['user_id'];
 
+            $info_array = sk_get_product_array($product_id, $user_id);
 
-
-            $info_array = sk_get_product_array($product_id);
-
-            $info_array['related_products'] = array();
-            $related_ids  = wc_get_related_products($product_id, $related_product_per_page);
-            foreach($related_ids as $id) {
-                $info_array['related_products'][] = sk_get_simple_product_array($id, isset($data['user_id']) ? $data['user_id'] : null);
+            if (isset($data['show_related'])) {
+                $info_array['related_products'] = array();
+                $related_ids  = wc_get_related_products($product_id, $related_product_per_page);
+                foreach($related_ids as $id) {
+                    $info_array['related_products'][] = sk_get_simple_product_array($id, $user_id);
+                }
             }
                 
 
