@@ -795,7 +795,7 @@ add_action( 'rest_api_init', function() {
             $payment_method = (isset($data['payment_method'])) ? $data['payment_method'] : null;
         
             $return_array = array();
-            //to add address to url: url?billing_address%Bfirst_name%5D=SEUN&billing_address%5Blast_name%5D=OYENIYI....
+            //to add address to url: url?billing_address%5Bfirst_name%5D=SEUN&billing_address%5Blast_name%5D=OYENIYI....
             //%5B is to select variable array with they key eg: address%5Bfirst_name
             //%5D is to add the value to the key eg:address%5Bfirst_name%5D=SEUN
             $billing_address = (isset($data['billing_address'])) ? $data['billing_address']: null;

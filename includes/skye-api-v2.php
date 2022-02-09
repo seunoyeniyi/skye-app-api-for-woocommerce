@@ -96,6 +96,57 @@ register_rest_route(SKYE_API_NAMESPACE_V2, '/change-cart-shipping-method/(?P<use
     }
 ));
 
+register_rest_route(SKYE_API_NAMESPACE_V2, '/update-cart-shipping/(?P<user>.*?)', array(
+    'methods' => 'POST',
+    'permission_callback' => function () {
+        return true;
+    },
+    'callback' => function ($data) {
+
+        $user_id = $data['user']; //could be the hash id
+        
+           
+            $changed = false;
+
+            //update the user cart shipping and calculate cost
+            if (isset($data['selected_country']) && isset($data['selected_state'])) { //use country and state code
+                //update user cart shipping
+                $changed = sk_update_cart_shipping_v2($user_id, $data['selected_country'], 
+                    $data['selected_state'], 
+                    (isset($data['postcode'])) ? $data['postcode'] : "", 
+                    (isset($data['shipping_provider'])) ? $data['shipping_provider'] : "woocommerce",
+                    (isset($data['shipping_provider_cost'])) ? $data['shipping_provider_cost'] : 0
+                );
+            } else { //use name of the shipping country and state
+                $changed = sk_update_cart_shipping_by_name_v2(
+                    $user_id,
+                    (isset($data['country'])) ? $data['country'] : "",
+                    (isset($data['state'])) ? $data['state'] : "",
+                    (isset($data['postcode'])) ? $data['postcode'] : "",
+                    (isset($data['shipping_provider'])) ? $data['shipping_provider'] : "woocommerce",
+                    (isset($data['shipping_provider_cost'])) ? $data['shipping_provider_cost'] : 0
+                );
+            }
+
+        
+            
+            $array = array();
+
+            if ($changed) {
+                $array['code'] = "saved";
+            } else {
+                $array['code'] = "not-saved";
+            }
+
+
+           
+
+
+            return $array;
+
+    }
+));
+
 //create order page
 register_rest_route( SKYE_API_NAMESPACE_V2, '/create-order/(?P<user>.*?)', array(
     'methods' => 'POST',
@@ -122,12 +173,34 @@ register_rest_route( SKYE_API_NAMESPACE_V2, '/create-order/(?P<user>.*?)', array
         $payment_method = (isset($data['payment_method'])) ? $data['payment_method'] : null;
     
         $return_array = array();
-        //to add address to url: url?billing_address%Bfirst_name%5D=SEUN&billing_address%5Blast_name%5D=OYENIYI....
-        //%5B is to select variable array with they key eg: address%5Bfirst_name
-        //%5D is to add the value to the key eg:address%5Bfirst_name%5D=SEUN
-        $billing_address = (isset($data['billing_address'])) ? $data['billing_address']: null;
-        $shipping_address = (isset($data['shipping_address'])) ? $data['shipping_address']: null;
-
+        
+        $billing_address = array(
+            'first_name' => (isset($data['billing_first_name'])) ? $data['billing_first_name']: null,
+            'last_name'  => (isset($data['billing_last_name'])) ? $data['billing_last_name']: null,
+            'company'    => (isset($data['billing_company'])) ? $data['billing_company']: null,
+            'email'      => (isset($data['billing_email'])) ? $data['billing_email']: null,
+            'phone'      => (isset($data['billing_phone'])) ? $data['billing_phone']: null,
+            'address_1'  => (isset($data['billing_address_1'])) ? $data['billing_address_1']: null,
+            'address_2'  => (isset($data['billing_address_2'])) ? $data['billing_address_2']: null, 
+            'city'       => (isset($data['billing_city'])) ? $data['billing_city']: null,
+            'state'      => (isset($data['billing_state'])) ? $data['billing_state']: null,
+            'postcode'   => (isset($data['billing_postcode'])) ? $data['billing_postcode']: null,
+            'country'    => (isset($data['billing_country'])) ? $data['billing_country']: null,
+        );
+        $shipping_address = array(
+            'first_name' => (isset($data['shipping_first_name'])) ? $data['shipping_first_name']: null,
+            'last_name'  => (isset($data['shipping_last_name'])) ? $data['shipping_last_name']: null,
+            'company'    => (isset($data['shipping_company'])) ? $data['shipping_company']: null,
+            'email'      => (isset($data['shipping_email'])) ? $data['shipping_email']: null,
+            'phone'      => (isset($data['shipping_phone'])) ? $data['shipping_phone']: null,
+            'address_1'  => (isset($data['shipping_address_1'])) ? $data['shipping_address_1']: null,
+            'address_2'  => (isset($data['shipping_address_2'])) ? $data['shipping_address_2']: null, 
+            'city'       => (isset($data['shipping_city'])) ? $data['shipping_city']: null,
+            'state'      => (isset($data['shipping_state'])) ? $data['shipping_state']: null,
+            'postcode'   => (isset($data['shipping_postcode'])) ? $data['shipping_postcode']: null,
+            'country'    => (isset($data['shipping_country'])) ? $data['shipping_country']: null,
+        );
+        
         //cart exists?
         $return_array['cart_exists'] = sk_user_cart_exists($user_id);
         if (!sk_user_cart_exists($user_id))
@@ -153,31 +226,48 @@ register_rest_route( SKYE_API_NAMESPACE_V2, '/create-order/(?P<user>.*?)', array
              }
             $woocommerce->cart->add_to_cart($item['ID']);
         }
+
+        $address = array();
             
-        //GET CUSTOMER
-        $customer = new WC_Customer( $user_id );
-        
-        $address = array(
-                'first_name' => $customer->get_first_name(),
-                'last_name'  => $customer->get_last_name(),
-                'company'    => $customer->get_shipping_company(),
-                'email'      => $customer->get_billing_email(),
-                'phone'      => $customer->get_billing_phone(),
-                'address_1'  => $customer->get_shipping_address_1(),
-                'address_2'  => $customer->get_shipping_address_2(), 
-                'city'       => $customer->get_shipping_city(),
-                'state'      => $customer->get_shipping_state(),
-                'postcode'   => $customer->get_shipping_postcode(),
-                'country'    => $customer->get_shipping_country()
-        );
+        if (sk_user_exists($user_id)) {
+            //GET CUSTOMER
+            $customer = new WC_Customer( $user_id );
+            $address = array(
+                    'first_name' => $customer->get_first_name(),
+                    'last_name'  => $customer->get_last_name(),
+                    'company'    => $customer->get_shipping_company(),
+                    'email'      => $customer->get_billing_email(),
+                    'phone'      => $customer->get_billing_phone(),
+                    'address_1'  => $customer->get_shipping_address_1(),
+                    'address_2'  => $customer->get_shipping_address_2(), 
+                    'city'       => $customer->get_shipping_city(),
+                    'state'      => $customer->get_shipping_state(),
+                    'postcode'   => $customer->get_shipping_postcode(),
+                    'country'    => $customer->get_shipping_country()
+            );
+        }
+
+        //twist shipping and billing address
+        if (!is_null($billing_address['email'])) { //use billing for shipping if shipping not set - using email
+            if (is_null($shipping_address['email'])) {
+                $shipping_address = $billing_address;
+            }
+        }
+        if (!is_null($shipping_address['email'])) { //use shipping for billing if billing not set - using email
+            if (is_null($billing_address['email'])) {
+                $billing_address = $shipping_address;
+            }
+        }
 
         //BILLING EMAIL - required
-            $billing_email = null;
-        if (!is_null($billing_address)) {
-            $billing_email = $billing_address['email'];
+        $billing_email = null;
+        if (!is_null($billing_address['email'])) {
+            $billing_email = isset($billing_address['email']) ? $billing_address['email'] : null;
         } else {
-            $billing_email = $address['email'];
+            $billing_email = isset($address['email']) ? $address['email'] : null;
         }
+
+        // return $billing_address;
 
         //CREATE ORDER - FROM CART
         $checkout = WC()->checkout();
@@ -189,8 +279,10 @@ register_rest_route( SKYE_API_NAMESPACE_V2, '/create-order/(?P<user>.*?)', array
         $order = wc_get_order($order_id);
 
         //ADD USER TO THE ORDER
-        update_post_meta($order->id, '_customer_user', (sk_user_exists($user_id)) ? $user_id : null);
-        $order->set_customer_id((sk_user_exists($user_id)) ? $user_id : null);
+        if (sk_user_exists($user_id)) {
+            update_post_meta($order->id, '_customer_user', (sk_user_exists($user_id)) ? $user_id : null);
+            $order->set_customer_id((sk_user_exists($user_id)) ? $user_id : null);
+        }
         
         //add coupon if any
         if ($cart['has_coupon']) {
@@ -198,14 +290,13 @@ register_rest_route( SKYE_API_NAMESPACE_V2, '/create-order/(?P<user>.*?)', array
         }
         
         //set address
-        
-        if (!is_null($billing_address)) {
+        if (!is_null($billing_address['email'])) {
             $order->set_address($billing_address, 'billing');
         } else { //use profile shipping address
             $order->set_address( $address, 'billing' );
         }
 
-        if (!is_null($shipping_address)) {
+        if (!is_null($shipping_address['email'])) {
             $order->set_address($shipping_address, 'shipping');
         } else { //use the profile shipping address
             $order->set_address( $address, 'shipping' );
@@ -242,7 +333,7 @@ register_rest_route( SKYE_API_NAMESPACE_V2, '/create-order/(?P<user>.*?)', array
         $order->add_item( $item );
 
         //deduct reward discount if applied
-        if ($cart['apply_reward']) {
+        if ($cart['apply_reward'] && sk_user_exists($user_id)) {
             global $wc_points_rewards;
 
             $discount_code = sprintf('wc_points_redemption_%s_%s', $order->get_user_id(), date('Y_m_d_h_i', current_time('timestamp')));
