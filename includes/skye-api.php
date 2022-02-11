@@ -691,6 +691,7 @@ add_action( 'rest_api_init', function() {
 
             //add user id or new generate id hash
             $return_array['user'] = $user_id;
+            $return_array["to_be_added"] = $data["product_id"];
 
             //merget the cart value
             return array_merge($return_array, json_decode(sk_get_cart_value($user_id), true));
