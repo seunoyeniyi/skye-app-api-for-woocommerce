@@ -509,7 +509,7 @@ add_action( 'rest_api_init', function() {
 			$tag = isset($data['tag']) ? $data['tag'] : null;
 			$hide_description = isset($data['hide_description']);
             $show_variation = isset($data['show_variation']);
-        
+            $show_outofstock = isset($data['show_outofstock']);
 
             $query_args = array(
                 'post_type' => 'product',
@@ -534,7 +534,7 @@ add_action( 'rest_api_init', function() {
             
             if (isset($data['price_range'])) { 
                 $price_btw = explode('|', $data['price_range']);
-                $query_args['meta_query'] = array(
+                $query_args['meta_query'][] = array(
                     array(
                         'key' => '_price',
                         'value' => array($price_btw[0], $price_btw[1]),
@@ -545,7 +545,7 @@ add_action( 'rest_api_init', function() {
             }
             if (isset($data['brand'])) {
                 if (taxonomy_exists('product_brand')) {
-                    $query_args['tax_query'] = array(
+                    $query_args['tax_query'][] = array(
                         array(
                             'taxonomy'  => 'product_brand', // Woocommerce product category taxonomy
                             'field'     => 'slug', // can be: 'name', 'slug' or 'term_id'
@@ -568,7 +568,7 @@ add_action( 'rest_api_init', function() {
             //Colour
             if (isset($data['color'])) {
                 $color = $data['color'];
-                $query_args['meta_query'] = array( array(
+                $query_args['meta_query'][] = array( array(
                     'key' => '_visibility',
                     'value' => array('catalog', 'visible'),
                     'compare' => 'IN',
@@ -584,7 +584,7 @@ add_action( 'rest_api_init', function() {
 
             //Size
             if (isset($data['size'])) {
-                $size = $data['size'];
+                $size = explode(',', $data['size']);
                 $query_args['meta_query'] = array( array(
                     'key' => '_visibility',
                     'value' => array('catalog', 'visible'),
@@ -594,9 +594,39 @@ add_action( 'rest_api_init', function() {
                 $query_args['tax_query'] = array( array(
                         'taxonomy'        => 'pa_size',
                         'field'           => 'slug',
-                        'terms'           =>  array($size),
+                        'terms'           =>  $size,
                         'operator'        => 'IN',
                     ) );
+            }
+
+            //Size kids
+			if (isset($data['pa_size-kids'])) {
+                $size = explode(',', $data['pa_size-kids']);
+                $query_args['meta_query'][] = array( array(
+                    'key' => '_visibility',
+                    'value' => array('catalog', 'visible'),
+                    'compare' => 'IN',
+                ) );
+
+                $query_args['tax_query'] = array( array(
+                        'taxonomy'        => 'pa_size-kids',
+                        'field'           => 'slug',
+                        'terms'           =>  $size,
+                        'operator'        => 'IN',
+                    ) );
+            }
+            
+
+            if (!$show_outofstock) {
+                $query_args['tax_query'][] = array(
+                    'relation' => 'AND',
+                    array(
+                        'taxonomy' => 'product_visibility',
+                        'field'    => 'name',
+                        'terms'    => array('outofstock'),
+                        'operator' => 'NOT IN'
+                    )
+                );
             }
             
 
