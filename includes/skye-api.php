@@ -567,17 +567,12 @@ add_action( 'rest_api_init', function() {
 
             //Colour
             if (isset($data['color'])) {
-                $color = $data['color'];
-                $query_args['meta_query'][] = array( array(
-                    'key' => '_visibility',
-                    'value' => array('catalog', 'visible'),
-                    'compare' => 'IN',
-                ) );
-
-                $query_args['tax_query'] = array( array(
+                $color = explode(',', $data['color']);
+              
+                $query_args['tax_query'][] = array( array(
                         'taxonomy'        => 'pa_color',
                         'field'           => 'slug',
-                        'terms'           =>  array($color),
+                        'terms'           =>  $color,
                         'operator'        => 'IN',
                     ) );
             }
@@ -585,30 +580,20 @@ add_action( 'rest_api_init', function() {
             //Size
             if (isset($data['size'])) {
                 $size = explode(',', $data['size']);
-                $query_args['meta_query'] = array( array(
-                    'key' => '_visibility',
-                    'value' => array('catalog', 'visible'),
-                    'compare' => 'IN',
-                ) );
-
-                $query_args['tax_query'] = array( array(
+				
+                $query_args['tax_query'][] = array( array(
                         'taxonomy'        => 'pa_size',
                         'field'           => 'slug',
                         'terms'           =>  $size,
                         'operator'        => 'IN',
                     ) );
             }
-
-            //Size kids
+			
+			//Size kids
 			if (isset($data['pa_size-kids'])) {
                 $size = explode(',', $data['pa_size-kids']);
-                $query_args['meta_query'][] = array( array(
-                    'key' => '_visibility',
-                    'value' => array('catalog', 'visible'),
-                    'compare' => 'IN',
-                ) );
-
-                $query_args['tax_query'] = array( array(
+				
+                $query_args['tax_query'][] = array( array(
                         'taxonomy'        => 'pa_size-kids',
                         'field'           => 'slug',
                         'terms'           =>  $size,
