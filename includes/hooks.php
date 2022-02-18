@@ -202,7 +202,7 @@ add_action('wp_head', function () {
             footer,
             aside,
             div.storefront-handheld-footer-bar,
-            #glt-translate-trigger {
+            #glt-translate-trigger, .mailchimp-newsletter {
                 display: none;
             }
             /* FOR CUSTOM elements to hide, for #id use *id */
@@ -237,8 +237,9 @@ add_action('wp_footer', function () {
                     $("aside").hide();
                     $("nav.woocommerce-breadcrumb").hide();
                     $("div.storefront-handheld-footer-bar").hide();
-                    $("#glt-translate-trigger").hide();
+                    $("#glt-translate-trigger, .mailchimp-newsletter, div.bannerContent").hide();
 
+                    $("div.fb_dialog_content iframe").remove();
                     $("script.yoast-schema-graph").remove();
 					$("a.cd-top.progress-wrap.active-progress, a.cd-top.progress-wrap").hide();
 					$("a.cd-top.progress-wrap.active-progress, a.cd-top.progress-wrap").remove();
