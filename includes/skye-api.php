@@ -1033,9 +1033,9 @@ add_action( 'rest_api_init', function() {
             if (!sk_order_exists($order_id))
                 return $return_array;
             //user exists
-            $return_array['user_exists'] = sk_user_exists($user_id);
-            if (!sk_user_exists($user_id))
-                return $return_array;
+            //$return_array['user_exists'] = sk_user_exists($user_id);
+            //if (!sk_user_exists($user_id))
+            //    return $return_array;
             
             //UPDATE ORDER
             // update address
