@@ -559,7 +559,7 @@ add_action( 'rest_api_init', function() {
             }
             // 			for featured products
 			if (isset($data['featured'])) { 
-                $query_args['tax_query'] = array(
+                $query_args['tax_query'][] = array(
                     array(
                         'taxonomy' => 'product_visibility',
                         'field'    => 'name',
@@ -617,6 +617,24 @@ add_action( 'rest_api_init', function() {
                 );
             }
             
+
+            $query_args['meta_query'][] = array(
+                'relation' => 'OR',
+                array(
+                    'key'     => '_price',
+                    'value'   => '',
+                    'type'    => 'numeric',
+                    'compare' => '!='
+                ),
+                array(
+                    'key'     => '_price',
+                    'value'   => 0,
+                    'type'    => 'numeric',
+                    'compare' => '!='
+                )
+            );
+
+   
 
             
             $query = new WP_Query($query_args);
