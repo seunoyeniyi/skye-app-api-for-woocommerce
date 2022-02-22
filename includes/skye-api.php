@@ -532,8 +532,11 @@ add_action( 'rest_api_init', function() {
             }
             if (isset($data['order'])) $query_args['order'] = $data['order'];
             
-            if (isset($data['price_range'])) { 
-                $price_btw = explode('|', $data['price_range']);
+            if (isset($data['price_range'])) {
+				$price_btw = explode('|', $data['price_range']);
+				if (strpos($data['price_range'], ',') !== false) {
+					$price_btw = explode(',', $data['price_range']);
+				}
                 $query_args['meta_query'][] = array(
                     array(
                         'key' => '_price',
