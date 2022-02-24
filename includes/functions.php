@@ -414,6 +414,8 @@ if (!function_exists('sk_get_cart_value')) {
     else
         return null;
     }
+
+
 }
 if (!function_exists('sk_update_cart_value')) {
     function sk_update_cart_value($user_id, $data) {

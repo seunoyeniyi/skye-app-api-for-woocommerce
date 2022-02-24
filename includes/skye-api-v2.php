@@ -167,6 +167,15 @@ register_rest_route( SKYE_API_NAMESPACE_V2, '/create-order/(?P<user>.*?)', array
 
 
         $user_id = $data['user'];
+
+        $_POST['user'] = $user_id; //to be able to access user id from hook
+        $_GET['user'] = $user_id; //to be able to access user id from hook
+        $_REQUEST['user'] = $user_id; //to be able to access user id from hook
+
+        $_POST['from_create_order_api'] = $user_id; //to be able to know from the hook that adding to cart is from create order route
+        $_GET['from_create_order_api'] = $user_id; //to be able to know from the hook that adding to cart is from create order route
+        $_REQUEST['from_create_order_api'] = $user_id; //to be able to know from the hook that adding to cart is from create order route
+        
         $allow_guest = (isset($data['allow_guest']));
         $status = (isset($data['status'])) ? sanitize_text_field($data['status']) : 'wc-pending';
         $order_note = (isset($data['order_note'])) ? sanitize_text_field($data['order_note']) : 'Ordered from API';
@@ -224,8 +233,10 @@ register_rest_route( SKYE_API_NAMESPACE_V2, '/create-order/(?P<user>.*?)', array
              } else {
                  if (isset( $_POST['wooco_ids'])) { unset($_POST['wooco_ids']); }
              }
-            $woocommerce->cart->add_to_cart($item['ID']);
+            $woocommerce->cart->add_to_cart($item['ID'], $item['quantity']);
         }
+
+       
 
         $address = array();
             
@@ -387,5 +398,108 @@ register_rest_route(SKYE_API_NAMESPACE_V2, '/test', array(
 
        ////
         
+    }
+));
+
+//cart info page
+register_rest_route( SKYE_API_NAMESPACE_V2, '/cart/(?P<user>.*?)', array(
+    'methods' => 'GET',
+        'permission_callback' => function() {return true; },
+    'callback' => function($data) {
+        require_once(WC_ABSPATH . 'includes/wc-cart-functions.php');
+        require_once(WC_ABSPATH . 'includes/wc-notice-functions.php');
+
+        global $wpdb, $woocommerce;
+
+        $woocommerce = WC();
+        $woocommerce->session = new WC_Session_Handler();
+        $woocommerce->session->init();
+        $woocommerce->customer = new WC_Customer();
+        $woocommerce->cart = new WC_Cart();
+
+        $woocommerce->cart->empty_cart();
+        
+
+        $cart_table = $wpdb->prefix . "skye_carts";
+        $user_id = $data['user']; //user real ID or hash for unknown user
+        
+        if (!sk_user_cart_exists($user_id)) return array("user-cart-not-exists");
+
+        $return_array = array();
+
+        $return_array = json_decode(sk_get_cart_value($user_id), true);
+        // $coupon = new WC_Coupon("44gb97sb");
+        // return $coupon->get_discount_type();
+        // return $coupon->get_amount();
+
+        //RESET REWARDS CALCULATIONS
+    if (class_exists("WC_Points_Rewards_Manager")) {
+        $current_user_points = WC_Points_Rewards_Manager::get_users_points($user_id); //points
+        $current_user_points_value = WC_Points_Rewards_Manager::get_users_points_value($user_id); //price
+        $return_array['user_points'] = $current_user_points;
+        $return_array['user_points_value'] = $current_user_points_value; //in price
+        //calculate reward discount
+        $cart_subtotal = $return_array['subtotal']; //total items price - $subtotal has been declared at the top
+        $cart_subtotal_points = WC_Points_Rewards_Manager::calculate_points_for_discount($cart_subtotal); //there is a difference btw calculate_poitns() and calculate_points_for_discount
+        if ($current_user_points >= $cart_subtotal_points) {
+            $return_array['reward_discount_points'] = $cart_subtotal_points;
+            $return_array['reward_discount'] = WC_Points_Rewards_Manager::calculate_points_value($cart_subtotal_points);
+        } else {
+            $return_array['reward_discount_points'] = $current_user_points;
+            $return_array['reward_discount'] = $current_user_points_value;
+        }
+        //update in database
+        $wpdb->update($cart_table, array(
+            'cart_value' => json_encode($return_array),
+        ), array(
+            'user' => $user_id
+        ));
+    }
+
+    if (class_exists('VTPRD_Controller')) { //whic means if the plugin is installed
+        foreach($return_array['items'] as $item) {
+            $woocommerce->cart->add_to_cart($item['ID'], $item['quantity']);
+        }
+
+        //global $vtprd_cart
+        global $vtprd_cart;
+        
+        //loop cart items and fidn out which product rules is applied to
+        foreach($vtprd_cart->cart_items as $item) {
+            
+            if ($item->yousave_total_amt > 0 && $item->discount_price !== "") { //rules applied
+                // $save_amount = $item->yousave_total_amt;
+                //now find this item in db cart json
+                
+                foreach($return_array['items'] as $index => $json_item) {
+                        if ($json_item["ID"] == $item->product_id) { //found
+
+                            $return_array['items'][$index]['subtotal'] = $item->discount_price;
+                            $return_array['items'][$index]['rules_applied'] = true;
+
+                        }
+                }
+            }
+
+        }
+
+
+
+        $return_array['subtotal'] = sk_cart_subtotal($return_array['items']); //re-calculate subtotal
+        $return_array['total'] = ($return_array['subtotal'] + $return_array['shipping_cost']) - $return_array['coupon_discount'];
+
+        //update in database
+        $wpdb->update($cart_table, array(
+            'cart_value' => json_encode($return_array),
+        ), array(
+            'user' => $user_id
+        ));
+    }
+    
+
+    
+    
+        
+        return $return_array;
     }
 ));

@@ -508,4 +508,36 @@ include(plugin_dir_path(__FILE__) . 'hooks/custom-user-profile-field.php');
 
 
 
+//FOR RICING RULES
+add_action( 'woocommerce_before_calculate_totals', 'add_custom_price' );
+function add_custom_price( $cart_object ) {
 
+    if (isset($_REQUEST['from_create_order_api'])) {
+        $user_id = 0;
+        if (isset($_REQUEST['user'])) {
+            $user_id = $_REQUEST['user'];
+        } elseif (isset($_REQUEST['user_id'])) {
+            $user_id = $_REQUEST['user_id'];
+        }
+        
+        $cart_json = json_decode(sk_get_cart_value($user_id), true);
+        
+        foreach ( $cart_object->cart_contents as $value ) {
+            $product_id = $value['product_id'];
+            //loop to json cart items
+            foreach ($cart_json['items'] as $item) {
+                //check if the items pricing rules is applied
+                if (isset($item['rules_applied'])) {
+                    if ($item['rules_applied']) {
+                        if ( $product_id == $item['ID']) {
+                            $value['data']->set_price($item['subtotal']);
+                        } elseif ( $value['variation_id'] == $item['ID'] ) {
+                            $value['data']->set_price($item['subtotal']);
+                        }
+                    }
+                }
+                
+            }
+        }
+    }
+}
