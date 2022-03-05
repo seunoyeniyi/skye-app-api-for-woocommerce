@@ -479,7 +479,16 @@ register_rest_route( SKYE_API_NAMESPACE_V2, '/cart/(?P<user>.*?)', array(
 
                         }
                 }
-            }
+            } else {
+                //now find this item in db cart json, if previous has rules applied
+                foreach($return_array['items'] as $index => $json_item) {
+                        if ($json_item["rules_applied"] && $json_item['ID'] == $item->product_id) { //found
+                            $return_array['items'][$index]['subtotal'] = $json_item["price"] * $json_item['quantity'];
+                            $return_array['items'][$index]['rules_applied'] = false;
+
+                        }
+                }
+            } 
 
         }
 
