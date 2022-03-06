@@ -524,6 +524,10 @@ register_rest_route( SKYE_API_NAMESPACE_V2, '/cart/(?P<user>.*?)', array(
                     'user' => $user_id
                 ));
             }
+
+            //we don't need error message from perivous cart error
+            if (isset($return_array['code'])) unset($return_array['code']);
+            if (isset($return_array['msg'])) unset($return_array['msg']);
     
     
         

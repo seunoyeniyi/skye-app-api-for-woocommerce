@@ -834,6 +834,11 @@ add_action( 'rest_api_init', function() {
                 ));
             }
 
+
+            //we don't need error message from perivous cart error
+            if (isset($return_array['code'])) unset($return_array['code']);
+            if (isset($return_array['msg'])) unset($return_array['msg']);
+
             
             return $return_array;
         }

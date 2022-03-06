@@ -862,6 +862,8 @@ if (!function_exists('sk_cart_json_handler')) {
             } else { //delete item since quantity is zero(0)
                 unset($return_array['items'][$search]);
                 $return_array['items'] = array_values($return_array['items']); //reset the indexes
+                unset($return_array['code']);
+                unset($return_array['msg']);
             }
         } else { //add to items
             if ($quantity > 0) {
@@ -915,6 +917,8 @@ if (!function_exists('sk_cart_json_handler')) {
         } else {
             unset($return_array['items'][$search]);
             $return_array['items'] = array_values($return_array['items']); //reset the indexes
+            unset($return_array['code']);
+            unset($return_array['msg']);
         }
 
         }
