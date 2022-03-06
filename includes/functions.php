@@ -676,6 +676,11 @@ if (!function_exists("sk_get_variation_attributes")) {
         }
     }
 }
+
+
+
+
+
 if (!function_exists('sk_cart_json_handler')) {
     function sk_cart_json_handler($user_id, $data, $old_cart_json = null) { //return array
     $product_id = $data['product_id'];
@@ -801,8 +806,14 @@ if (!function_exists('sk_cart_json_handler')) {
  
 
         
-
-        $return_array['items'][] = $new_row;
+        if ($product->get_stock_status() != "outofstock" || $product->is_in_stock()) {
+            $return_array['items'][] = $new_row;
+            unset($return_array['code']);
+            unset($return_array['msg']);
+        } else {
+            $return_array['code'] = "out-of-stock";
+            $return_array['msg'] = "Product out of stock";
+        }
 
     } else { //update the old json
         $return_array = json_decode($old_cart_json, true); //second parameter is true, to convert to array instead of object
@@ -829,16 +840,32 @@ if (!function_exists('sk_cart_json_handler')) {
 
         if (!is_null($search) && $product->get_type() != "wooco") { //update items
             if ($quantity > 0) { //update product in items
-                $return_array['items'][$search]['quantity'] = ($replace_qty) ? $quantity : ($return_array['items'][$search]['quantity'] + $quantity);
-                $return_array['items'][$search]['price'] = $product->get_price();
-                $return_array['items'][$search]['subtotal'] = $product->get_price() * $return_array['items'][$search]['quantity']; //since the quantity has been update, it can now be re-use
-                $return_array['items'][$search]['attributes'] =  $product->get_attributes();
+
+                $new_quantity = ($replace_qty) ? $quantity : ($return_array['items'][$search]['quantity'] + $quantity);
+
+                if (($product->managing_stock() && $new_quantity <= $product->get_stock_quantity()) || !$product->managing_stock()) {
+
+                    $return_array['items'][$search]['quantity'] = $new_quantity;
+                    $return_array['items'][$search]['price'] = $product->get_price();
+                    $return_array['items'][$search]['subtotal'] = $product->get_price() * $return_array['items'][$search]['quantity']; //since the quantity has been update, it can now be re-use
+                    $return_array['items'][$search]['attributes'] =  $product->get_attributes();
+
+                    unset($return_array['code']);
+                    unset($return_array['msg']);
+
+                } else {
+                    $return_array['code'] = "maximum-quantity-reached";
+                    $return_array['msg'] = "We have " . $product->get_stock_quantity() . " in stock and you already have " . $return_array['items'][$search]['quantity'] . " in your cart.";
+                }
+                
+
             } else { //delete item since quantity is zero(0)
                 unset($return_array['items'][$search]);
                 $return_array['items'] = array_values($return_array['items']); //reset the indexes
             }
         } else { //add to items
             if ($quantity > 0) {
+                if ($product->get_stock_status() != "outofstock" || $product->is_in_stock()) {
                 $new_row = array(
                     'ID' => $product_id,
                     'quantity' => $quantity,
@@ -877,6 +904,14 @@ if (!function_exists('sk_cart_json_handler')) {
                 ###################//WOO COMBO OFFER PLUGIN #####################
 
                 $return_array['items'][] = $new_row;
+
+                unset($return_array['code']);
+                unset($return_array['msg']);
+
+            } else {
+                $return_array['code'] = "out-of-stock";
+                $return_array['msg'] = "Product out of stock";
+            }
         } else {
             unset($return_array['items'][$search]);
             $return_array['items'] = array_values($return_array['items']); //reset the indexes
@@ -953,6 +988,10 @@ if (!function_exists('sk_cart_json_handler')) {
     return $return_array;
     }
 }
+
+
+
+
 if (!function_exists('sk_user_exists')) {
     function sk_user_exists($user_id) {
     $user = get_userdata($user_id);

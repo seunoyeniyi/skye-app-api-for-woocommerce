@@ -815,6 +815,24 @@ add_action( 'rest_api_init', function() {
             ));
         }
 
+            $update_db = false;
+            //check for out of stock products
+            foreach ($return_array['items'] as $index => $item) {
+                $product = wc_get_product($item['ID']);
+                if ($product->managing_stock() && $item['quantity'] > $product->get_stock_quantity()) {
+                    $return_array['items'][$index]['quantity'] = $product->get_stock_quantity();
+                    $return_array['items'][$index]['subtotal'] = $product->get_price() * $product->get_stock_quantity();
+                    $update_db = true;
+                }
+            }
+
+            if ($update_db) {
+                $wpdb->update($cart_table, array(
+                    'cart_value' => json_encode($return_array),
+                ), array(
+                    'user' => $user_id
+                ));
+            }
 
             
             return $return_array;

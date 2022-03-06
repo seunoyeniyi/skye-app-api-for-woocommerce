@@ -541,3 +541,4 @@ function add_custom_price( $cart_object ) {
         }
     }
 }
+
