@@ -10,7 +10,7 @@ if (isset($_GET['clear_customers_cart'])) {
 		<div id="message" class="updated woocommerce-message wc-connect woocommerce-message--success">
 			<p><b>ERROR!</b> Unable to clear customers cart.</p>
 		</div>
-<?php }
+	<?php }
 }
 
 
@@ -27,8 +27,10 @@ if ($_SERVER['REQUEST_METHOD'] == "POST" && isset($_POST['save-app'])) {
 	update_option('sk_push_api_key', $_POST['push_api_key']);
 
 	?>
-	<div id="message" class="updated inline"><p><strong>Your settings have been saved.</strong></p></div>
-	<?php
+	<div id="message" class="updated inline">
+		<p><strong>Your settings have been saved.</strong></p>
+	</div>
+<?php
 }
 
 
@@ -41,9 +43,8 @@ if ($_SERVER['REQUEST_METHOD'] == "POST" && isset($_POST['save-app'])) {
 
 <div id="welcome-panel" class="welcome-panel" style="padding-bottom: 20px;">
 	<input type="hidden" id="welcomepanelnonce" name="welcomepanelnonce" value="633898c0b5">
-	<div class="welcome-panel-content">
+	<div class="welcome-panel-content" style="padding: 20px 20px 0px 20px;">
 		<h2>Thanks for using <b>Skye App API</b> for WordPress WooCommerce!</h2>
-		<p class="about-description">We’ve assembled some links to get you started:</p>
 		<div class="welcome-panel-column-container">
 			<div class="welcome-panel-column">
 				<h3>Get Started</h3>
@@ -85,69 +86,92 @@ if ($_SERVER['REQUEST_METHOD'] == "POST" && isset($_POST['save-app'])) {
 	<form method="post" id="mainform" action="" enctype="multipart/form-data">
 
 		<h1>Quick Settings</h1>
-		<h2>Store Banners</h2>
-		<div id="store_address-description">
+
+
+		<ul class="subsubsub">
+			<?php if (SKYE_ALLOW_API_TOKEN_KEY) { ?>
+				<li><a href="javascript:void(0);" class="current">Quick Settings</a> | </li>
+				<li><a href="<?php echo admin_url('admin.php?page=skye-app-token-key'); ?>" class="">Secure TOKEN KEY</a> </li>
+			<?php } ?>
+			
+		</ul>
+		<br><br>
+
+		<!-- <h2>Store Banners</h2> -->
+		<!-- <div id="store_address-description">
 			<p>This is how you control which banner to display in your app. <br> <b>NOTE:</b> Enabling banners is not active until it is accessed from the APP.</p>
-		</div>
+		</div> -->
 		<table class="form-table">
 
 			<tbody>
-			<tr valign="top" class="">
-					<th scope="row" class="titledesc">Slide Banners</th>
-					<td class="">
+				<?php if (SKYE_ALLOW_SLIDE_BANNER) { ?>
+					<tr valign="top" class="">
+						<th scope="row" class="titledesc">Slide Banners</th>
+						<td class="">
 							<legend class="screen-reader-text"><span>Enable</span></legend>
 							<label for="enable_slide_banners">
-								<input name="enable_slide_banners" id="enable_slide_banners" type="checkbox" class="" <?php echo (get_option( "sk_enable_slide_banners", 0)) ? "checked" : ""; ?>> Enable</label>
-					</td>
-			</tr>
-			<tr valign="top" class="">
-					<th scope="row" class="titledesc">Big Banners</th>
-					<td class="">
+								<input name="enable_slide_banners" id="enable_slide_banners" type="checkbox" class="" <?php echo (get_option("sk_enable_slide_banners", 0)) ? "checked" : ""; ?>> Enable</label>
+						</td>
+					</tr>
+				<?php } ?>
+				<?php if (SKYE_ALLOW_BIG_BANNER) { ?>
+					<tr valign="top" class="">
+						<th scope="row" class="titledesc">Big Banners</th>
+						<td class="">
 							<legend class="screen-reader-text"><span>Enable</span></legend>
 							<label for="enable_big_banners">
-								<input name="enable_big_banners" id="enable_big_banners" type="checkbox" class="" <?php echo (get_option( "sk_enable_big_banners", 0)) ? "checked" : ""; ?>> Enable</label>
-					</td>
-			</tr>
-			<tr valign="top" class="">
-					<th scope="row" class="titledesc">Carousel Banners</th>
-					<td class="">
+								<input name="enable_big_banners" id="enable_big_banners" type="checkbox" class="" <?php echo (get_option("sk_enable_big_banners", 0)) ? "checked" : ""; ?>> Enable</label>
+						</td>
+					</tr>
+				<?php } ?>
+				<?php if (SKYE_ALLOW_CAROUSEL_BANNER) { ?>
+					<tr valign="top" class="">
+						<th scope="row" class="titledesc">Carousel Banners</th>
+						<td class="">
 							<legend class="screen-reader-text"><span>Enable</span></legend>
 							<label for="enable_carousel_banners">
-								<input name="enable_carousel_banners" id="enable_carousel_banners" type="checkbox" class="" <?php echo (get_option( "sk_enable_carousel_banners", 0)) ? "checked" : ""; ?>> Enable</label>
-					</td>
-			</tr>
-			<tr valign="top" class="">
-					<th scope="row" class="titledesc">Thin Banners</th>
-					<td class="">
+								<input name="enable_carousel_banners" id="enable_carousel_banners" type="checkbox" class="" <?php echo (get_option("sk_enable_carousel_banners", 0)) ? "checked" : ""; ?>> Enable</label>
+						</td>
+					</tr>
+				<?php } ?>
+				<?php if (SKYE_ALLOW_THIN_BANNER) { ?>
+					<tr valign="top" class="">
+						<th scope="row" class="titledesc">Thin Banners</th>
+						<td class="">
 							<legend class="screen-reader-text"><span>Enable</span></legend>
 							<label for="enable_thin_banners">
-								<input name="enable_thin_banners" id="enable_thin_banners" type="checkbox" class="" <?php echo (get_option( "sk_enable_thin_banners", 0)) ? "checked" : ""; ?>> Enable</label>
-					</td>
-			</tr>
-			<!-- <tr valign="top" class="">
+								<input name="enable_thin_banners" id="enable_thin_banners" type="checkbox" class="" <?php echo (get_option("sk_enable_thin_banners", 0)) ? "checked" : ""; ?>> Enable</label>
+						</td>
+					</tr>
+				<?php } ?>
+				<!-- <tr valign="top" class="">
 					<th scope="row" class="titledesc">Sale Banners</th>
 					<td class="">
 							<legend class="screen-reader-text"><span>Enable</span></legend>
 							<label for="enable_sale_banners">
-								<input name="enable_sale_banners" id="enable_sale_banners" type="checkbox" class="" <?php echo (get_option( "sk_enable_sale_banners", 0)) ? "checked" : ""; ?>> Enable</label>
+								<input name="enable_sale_banners" id="enable_sale_banners" type="checkbox" class="" <?php echo (get_option("sk_enable_sale_banners", 0)) ? "checked" : ""; ?>> Enable</label>
 					</td>
 			</tr> -->
-			<tr valign="top" class="">
-					<th scope="row" class="titledesc">Grid Banners</th>
-					<td class="">
+				<?php if (SKYE_ALLOW_GRID_BANNER) { ?>
+					<tr valign="top" class="">
+						<th scope="row" class="titledesc">Grid Banners</th>
+						<td class="">
 							<legend class="screen-reader-text"><span>Enable</span></legend>
 							<label for="enable_grid_banners">
-								<input name="enable_grid_banners" id="enable_grid_banners" type="checkbox" class="" <?php echo (get_option( "sk_enable_grid_banners", 0)) ? "checked" : ""; ?>> Enable</label>
-					</td>
-			</tr>
-			<tr valign="top" class="">
-					<th scope="row" class="titledesc">Video Banners</th>
-					<td class="">
+								<input name="enable_grid_banners" id="enable_grid_banners" type="checkbox" class="" <?php echo (get_option("sk_enable_grid_banners", 0)) ? "checked" : ""; ?>> Enable</label>
+						</td>
+					</tr>
+				<?php } ?>
+				<?php if (SKYE_ALLOW_VIDEO_BANNER) { ?>
+					<tr valign="top" class="">
+						<th scope="row" class="titledesc">Video Banners</th>
+						<td class="">
 							<legend class="screen-reader-text"><span>Enable</span></legend>
 							<label for="enable_video_banners">
-								<input name="enable_video_banners" id="enable_video_banners" type="checkbox" class="" <?php echo (get_option( "sk_enable_video_banners", 0)) ? "checked" : ""; ?>> Enable</label>
-					</td>
-			</tr>
+								<input name="enable_video_banners" id="enable_video_banners" type="checkbox" class="" <?php echo (get_option("sk_enable_video_banners", 0)) ? "checked" : ""; ?>> Enable</label>
+						</td>
+					</tr>
+				<?php } ?>
 			</tbody>
 		</table>
 		<h2>Push Notification</h2>
@@ -157,12 +181,12 @@ if ($_SERVER['REQUEST_METHOD'] == "POST" && isset($_POST['save-app'])) {
 		<table class="form-table">
 
 			<tbody>
-			<tr valign="top">
+				<tr valign="top">
 					<th scope="row" class="titledesc">
 						<label for="push_api_key">API Key <span class="woocommerce-help-tip"></span></label>
 					</th>
 					<td class="forminp forminp-text">
-						<input name="push_api_key" id="push_api_key" type="text" style="width: 80%;" value="<?php echo get_option( "sk_push_api_key", ""); ?>" class="" placeholder="Key">
+						<input name="push_api_key" id="push_api_key" type="text" style="width: 80%;" value="<?php echo get_option("sk_push_api_key", ""); ?>" class="" placeholder="Key">
 					</td>
 				</tr>
 			</tbody>

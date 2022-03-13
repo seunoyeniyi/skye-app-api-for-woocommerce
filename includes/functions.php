@@ -994,6 +994,13 @@ if (!function_exists('sk_cart_json_handler')) {
 }
 
 
+if (!function_exists('sk_api_security_check')) {
+    function sk_api_security_check($request) {
+        if (!SKYE_ALLOW_API_TOKEN_KEY) return true;
+        return ($request->get_param( 'token_key' ) == get_option("sk_app_token_key") && !empty($request->get_param( 'token_key' )));
+    }
+}
+
 
 
 if (!function_exists('sk_user_exists')) {
@@ -1902,5 +1909,17 @@ if (!function_exists('in_sk_app')) {
         } else {
             return false;
         }
+    }
+}
+
+if (!function_exists('sk_generate_random_key')) {
+    function sk_generate_random_key($length = 25) {
+        $characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        $charactersLength = strlen($characters);
+        $randomString = '';
+        for ($i = 0; $i < $length; $i++) {
+            $randomString .= $characters[rand(0, $charactersLength - 1)];
+        }
+        return $randomString;
     }
 }

@@ -1,9 +1,7 @@
 <?php 
 register_rest_route(SKYE_API_NAMESPACE_V2, '/update-user-shipping-address/(?P<user>.*?)', array(
     'methods' => 'POST',
-    'permission_callback' => function () {
-        return true;
-    },
+    'permission_callback' => 'sk_api_security_check',
     'callback' => function ($data) {
 
         $user_id = $data['user'];
@@ -85,7 +83,7 @@ register_rest_route(SKYE_API_NAMESPACE_V2, '/update-user-shipping-address/(?P<us
 
 register_rest_route(SKYE_API_NAMESPACE_V2, '/change-cart-shipping-method/(?P<user_id>.*?)/(?P<shipping_method>.*?)', array(
     'methods' => 'POST',
-    'permission_callback' => function() {return true; },
+    'permission_callback' => 'sk_api_security_check',
     'callback' => function($data) {
         
         $user_id = $data['user_id'];
@@ -99,9 +97,7 @@ register_rest_route(SKYE_API_NAMESPACE_V2, '/change-cart-shipping-method/(?P<use
 
 register_rest_route(SKYE_API_NAMESPACE_V2, '/update-cart-shipping/(?P<user>.*?)', array(
     'methods' => 'POST',
-    'permission_callback' => function () {
-        return true;
-    },
+    'permission_callback' => 'sk_api_security_check',
     'callback' => function ($data) {
 
         $user_id = $data['user']; //could be the hash id
@@ -151,7 +147,7 @@ register_rest_route(SKYE_API_NAMESPACE_V2, '/update-cart-shipping/(?P<user>.*?)'
 //create order page
 register_rest_route( SKYE_API_NAMESPACE_V2, '/create-order/(?P<user>.*?)', array(
     'methods' => 'POST',
-        'permission_callback' => function() {return true; },
+        'permission_callback' => 'sk_api_security_check',
     'callback' => function($data) {
         require_once(WC_ABSPATH . 'includes/wc-cart-functions.php');
         require_once(WC_ABSPATH . 'includes/wc-notice-functions.php');
@@ -390,9 +386,7 @@ register_rest_route( SKYE_API_NAMESPACE_V2, '/create-order/(?P<user>.*?)', array
 
 register_rest_route(SKYE_API_NAMESPACE_V2, '/test', array(
     'methods' => 'GET',
-    'permission_callback' => function () {
-        return true;
-    },
+    'permission_callback' => 'sk_api_security_check',
     'callback' => function ($data) {
 
        ////
@@ -403,7 +397,7 @@ register_rest_route(SKYE_API_NAMESPACE_V2, '/test', array(
 //cart info page
 register_rest_route( SKYE_API_NAMESPACE_V2, '/cart/(?P<user>.*?)', array(
     'methods' => 'GET',
-        'permission_callback' => function() {return true; },
+        'permission_callback' => 'sk_api_security_check',
     'callback' => function($data) {
         require_once(WC_ABSPATH . 'includes/wc-cart-functions.php');
         require_once(WC_ABSPATH . 'includes/wc-notice-functions.php');

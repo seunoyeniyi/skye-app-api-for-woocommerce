@@ -3,6 +3,7 @@ add_filter('manage_edit-shop_order_columns', 'skye_add_driver_order_column_to_ad
 
 function skye_add_driver_order_column_to_admin_table($columns)
 {
+    if (!SKYE_ALLOW_DELIVERY_DRIVER) return $columns;
     $reordered_columns = array();
     foreach ($columns as $key => $column) {
         $reordered_columns[$key] = $column;
@@ -38,6 +39,7 @@ add_action('add_meta_boxes', 'skye_add_driver_meta_boxes');
 if (!function_exists('skye_add_driver_meta_boxes')) {
     function skye_add_driver_meta_boxes()
     {
+        if (!SKYE_ALLOW_DELIVERY_DRIVER) return;
         add_meta_box('skye_other_fields', __('Driver', 'woocommerce'), 'skye_add_driver_fields_for_packaging', 'shop_order', 'side', 'high');
     }
 }
@@ -46,6 +48,8 @@ if (!function_exists('skye_add_driver_meta_boxes')) {
 if (!function_exists('skye_add_driver_fields_for_packaging')) {
     function skye_add_driver_fields_for_packaging()
     {
+        if (!SKYE_ALLOW_DELIVERY_DRIVER) return;
+        
         global $post;
 
         //if status is either on-hold or processing

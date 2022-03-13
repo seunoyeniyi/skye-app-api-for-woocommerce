@@ -236,6 +236,10 @@ add_action('wp_footer', function () {
         ?>
             <script>
               jQuery(document).ready(function ($) {
+
+                    //add app class to body = so that it can be use to access the children
+                    $("body").addClass("in-sk-app-body");
+
                     $('header, #masthead').hide();
                     $('div.storefront-breadcrumb').hide();
                     $("footer").hide();

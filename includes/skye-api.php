@@ -3,7 +3,7 @@ add_action( 'rest_api_init', function() {
     //SITE INFO page
     register_rest_route( SKYE_API_NAMESPACE_V1, '/site-info', array(
             'methods' => 'GET',
-            'permission_callback' => function() {return true; },
+            'permission_callback' => 'sk_api_security_check',
             'callback' => function($data) {
                 $arr = array();
                 $arr['name'] = get_bloginfo('name'); // – Site title (set in Settings > General)
@@ -43,7 +43,7 @@ add_action( 'rest_api_init', function() {
     //register user
     register_rest_route( SKYE_API_NAMESPACE_V1, '/register', array(
         'methods' => 'POST',
-            'permission_callback' => function() {return true; },
+            'permission_callback' => 'sk_api_security_check',
         'callback' => function($data) {
             $username = (isset($data['username'])) ? sanitize_text_field($data['username']) : null;
             $email = (isset($data['email'])) ? sanitize_email($data['email']) : null;
@@ -97,7 +97,7 @@ add_action( 'rest_api_init', function() {
     //confirm user login
     register_rest_route( SKYE_API_NAMESPACE_V1, '/authenticate', array(
         'methods' => 'POST',
-            'permission_callback' => function() {return true; },
+            'permission_callback' => 'sk_api_security_check',
         'callback' => function($data) {
             $username = (isset($data['username'])) ? sanitize_text_field($data['username']) : null;
             $email = (isset($data['email'])) ? sanitize_email($data['email']) : null;
@@ -141,7 +141,7 @@ add_action( 'rest_api_init', function() {
     //update user billing address
     register_rest_route( SKYE_API_NAMESPACE_V1, '/update-billing-address/(?P<user>.*?)', array(
         'methods' => 'POST',
-            'permission_callback' => function() {return true; },
+            'permission_callback' => 'sk_api_security_check',
         'callback' => function($data) {
             $user_id = $data['user'];
             
@@ -173,7 +173,7 @@ add_action( 'rest_api_init', function() {
     //update user shipping address
     register_rest_route( SKYE_API_NAMESPACE_V1, '/update-shipping-address/(?P<user>.*?)', array(
         'methods' => 'POST',
-            'permission_callback' => function() {return true; },
+            'permission_callback' => 'sk_api_security_check',
         'callback' => function($data) {
             $user_id = $data['user'];
             
@@ -205,7 +205,7 @@ add_action( 'rest_api_init', function() {
     //get user info
     register_rest_route( SKYE_API_NAMESPACE_V1, '/user-info/(?P<user>.*?)', array(
         'methods' => 'GET',
-            'permission_callback' => function() {return true; },
+            'permission_callback' => 'sk_api_security_check',
         'callback' => function($data) {
             $user_id = $data['user'];
             $arr = sk_get_user_info($user_id);
@@ -217,7 +217,7 @@ add_action( 'rest_api_init', function() {
     //update user info
     register_rest_route( SKYE_API_NAMESPACE_V1, '/update-user-info/(?P<user>.*?)', array(
         'methods' => 'POST',
-            'permission_callback' => function() {return true; },
+            'permission_callback' => 'sk_api_security_check',
         'callback' => function($data) {
             $user_id = $data['user'];
             //keys allowed to change
@@ -268,7 +268,7 @@ add_action( 'rest_api_init', function() {
     //update user shipping address
     register_rest_route( SKYE_API_NAMESPACE_V1, '/update-user-shipping-address/(?P<user>.*?)', array(
         'methods' => 'POST',
-            'permission_callback' => function() {return true; },
+            'permission_callback' => 'sk_api_security_check',
         'callback' => function($data) {
             $user_id = $data['user'];
             $customer = new WC_Customer($user_id);
@@ -348,7 +348,7 @@ add_action( 'rest_api_init', function() {
     //update user billing address
     register_rest_route( SKYE_API_NAMESPACE_V1, '/update-user-billing-address/(?P<user>.*?)', array(
         'methods' => 'POST',
-            'permission_callback' => function() {return true; },
+            'permission_callback' => 'sk_api_security_check',
         'callback' => function($data) {
             $user_id = $data['user'];
             $customer = new WC_Customer($user_id);
@@ -377,7 +377,7 @@ add_action( 'rest_api_init', function() {
      //change user password
      register_rest_route( SKYE_API_NAMESPACE_V1, '/change-password/(?P<user_id>.*?)/(?P<old_password>.*?)/(?P<new_password>.*?)', array(
         'methods' => 'POST',
-            'permission_callback' => function() {return true; },
+            'permission_callback' => 'sk_api_security_check',
         'callback' => function($data) {
             $user_id = $data['user_id'];
             $old_password = $data['old_password'];
@@ -417,7 +417,7 @@ add_action( 'rest_api_init', function() {
     //reset user password
     register_rest_route( SKYE_API_NAMESPACE_V1, '/reset-user-password/(?P<user_id>.*?)', array(
         'methods' => 'GET',
-            'permission_callback' => function() {return true; },
+            'permission_callback' => 'sk_api_security_check',
         'callback' => function($data) {
             $user_id = $data['user_id'];
             $user = new WP_User(intval($user_id));
@@ -431,7 +431,7 @@ add_action( 'rest_api_init', function() {
     //products page
     register_rest_route( SKYE_API_NAMESPACE_V1, '/products', array(
         'methods' => 'GET',
-            'permission_callback' => function() {return true; },
+            'permission_callback' => 'sk_api_security_check',
         'callback' => function($data) {
             $paged = isset($data['paged']) ? $data['paged'] : 1;
             $post_per_page = isset($data['per_page']) ? $data['per_page'] : 20;
@@ -499,7 +499,7 @@ add_action( 'rest_api_init', function() {
     //simple products page
     register_rest_route( SKYE_API_NAMESPACE_V1, '/simple-products', array(
         'methods' => 'GET',
-            'permission_callback' => function() {return true; },
+            'permission_callback' => 'sk_api_security_check',
         'callback' => function($data) {
             $paged = isset($data['paged']) ? $data['paged'] : 1;
             $post_per_page = isset($data['per_page']) ? $data['per_page'] : 20;
@@ -668,7 +668,7 @@ add_action( 'rest_api_init', function() {
     //single product page
     register_rest_route( SKYE_API_NAMESPACE_V1, '/product/(?P<id>\d+)', array(
         'methods' => 'GET',
-            'permission_callback' => function() {return true; },
+            'permission_callback' => 'sk_api_security_check',
         'callback' => function($data) {
             $product_id = $data['id'];
             $related_product_per_page = isset($data['related_product_per_page']) ? $data['related_product_per_page'] : 10;
@@ -693,7 +693,7 @@ add_action( 'rest_api_init', function() {
     //add to cart page
     register_rest_route( SKYE_API_NAMESPACE_V1, '/add-to-cart/(?P<product_id>\d+)', array(
         'methods' => 'POST',
-            'permission_callback' => function() {return true; },
+            'permission_callback' => 'sk_api_security_check',
         'callback' => function($data) {
  
             $user_id = null;
@@ -737,7 +737,7 @@ add_action( 'rest_api_init', function() {
     //add cart coupon
     register_rest_route( SKYE_API_NAMESPACE_V1, '/update-cart-coupon/(?P<user>.*?)/(?P<coupon>.*?)', array(
         'methods' => 'POST',
-            'permission_callback' => function() {return true; },
+            'permission_callback' => 'sk_api_security_check',
         'callback' => function($data) {
  
             $user_id = $data['user'];
@@ -749,7 +749,7 @@ add_action( 'rest_api_init', function() {
     //apply reward discount
     register_rest_route( SKYE_API_NAMESPACE_V1, '/apply-cart-reward/(?P<user>.*?)', array(
         'methods' => 'POST',
-            'permission_callback' => function() {return true; },
+            'permission_callback' => 'sk_api_security_check',
         'callback' => function($data) {
  
             $user_id = $data['user'];
@@ -761,7 +761,7 @@ add_action( 'rest_api_init', function() {
     //remove reward discount
     register_rest_route( SKYE_API_NAMESPACE_V1, '/remove-cart-reward/(?P<user>.*?)', array(
         'methods' => 'POST',
-            'permission_callback' => function() {return true; },
+            'permission_callback' => 'sk_api_security_check',
         'callback' => function($data) {
  
             $user_id = $data['user'];
@@ -774,7 +774,7 @@ add_action( 'rest_api_init', function() {
     //cart info page
     register_rest_route( SKYE_API_NAMESPACE_V1, '/cart/(?P<user>.*?)', array(
         'methods' => 'GET',
-            'permission_callback' => function() {return true; },
+            'permission_callback' => 'sk_api_security_check',
         'callback' => function($data) {
             global $wpdb;
             
@@ -846,7 +846,7 @@ add_action( 'rest_api_init', function() {
     //create order page
     register_rest_route( SKYE_API_NAMESPACE_V1, '/create-order/(?P<user>.*?)', array(
         'methods' => 'POST',
-            'permission_callback' => function() {return true; },
+            'permission_callback' => 'sk_api_security_check',
         'callback' => function($data) {
             $user_id = $data['user'];
             $allow_guest = (isset($data['allow_guest']));
@@ -979,7 +979,7 @@ add_action( 'rest_api_init', function() {
     //list orders page
     register_rest_route( SKYE_API_NAMESPACE_V1, '/orders/(?P<user>.*?)', array(
         'methods' => 'GET',
-            'permission_callback' => function() {return true; },
+            'permission_callback' => 'sk_api_security_check',
         'callback' => function($data) {
             $user_id = $data['user'];
             $status = (isset($data['status'])) ? $data['status'] : array('wc-processing', 'wc-on-hold', 'wc-completed', 'wc-pending');
@@ -1020,7 +1020,7 @@ add_action( 'rest_api_init', function() {
     //single order page
     register_rest_route( SKYE_API_NAMESPACE_V1, '/order/(?P<id>.*?)/(?P<user_id>.*?)', array(
         'methods' => 'GET',
-            'permission_callback' => function() {return true; },
+            'permission_callback' => 'sk_api_security_check',
         'callback' => function($data) {
             $order_id = $data['id'];
             $user_id = $data['user_id'];
@@ -1039,7 +1039,7 @@ add_action( 'rest_api_init', function() {
     //update order page
     register_rest_route( SKYE_API_NAMESPACE_V1, '/update-order/(?P<order_id>.*?)/(?P<user_id>.*?)', array(
         'methods' => 'POST',
-            'permission_callback' => function() {return true; },
+            'permission_callback' => 'sk_api_security_check',
         'callback' => function($data) {
             $user_id = $data['user_id'];
             $order_id  = $data['order_id'];
@@ -1127,7 +1127,7 @@ add_action( 'rest_api_init', function() {
     //categories page
     register_rest_route( SKYE_API_NAMESPACE_V1, '/categories', array(
         'methods' => 'GET',
-            'permission_callback' => function() {return true; },
+            'permission_callback' => 'sk_api_security_check',
         'callback' => function($data) {
             $with_sub = (isset($data['with_sub'])) ? true : false; //true for listing sub cateogries with parent output list and false for removing sub categories from parent output list
             $hide_empty = (isset($data['hide_empty'])) ? 1 : 0;
@@ -1238,7 +1238,7 @@ add_action( 'rest_api_init', function() {
     //tags page
     register_rest_route( SKYE_API_NAMESPACE_V1, '/tags', array(
         'methods' => 'GET',
-            'permission_callback' => function() {return true; },
+            'permission_callback' => 'sk_api_security_check',
         'callback' => function($data) {
             $hide_empty = (isset($data['hide_empty'])) ? 1 : 0;
             $order_by = (isset($data['order_by'])) ? $data['order_by'] : null;
@@ -1272,7 +1272,7 @@ add_action( 'rest_api_init', function() {
     //get variation from attributes;
     register_rest_route( SKYE_API_NAMESPACE_V1, '/product-variation/(?P<product_id>\d+)', array(
             'methods' => 'GET',
-            'permission_callback' => function() {return true; },
+            'permission_callback' => 'sk_api_security_check',
             'callback' => function($data) {
                 function treat($s) {
                                     $s = strtolower($s);
@@ -1312,14 +1312,14 @@ add_action( 'rest_api_init', function() {
     //COPY CODE AFTER THIS FOR GIVEPHUCK UPDATE
     register_rest_route( SKYE_API_NAMESPACE_V1, '/regions', array(
             'methods' => 'GET',
-            'permission_callback' => function() {return true; },
+            'permission_callback' => 'sk_api_security_check',
             'callback' => function($data) {  
                 return sk_get_regions();
             }
     ));
     register_rest_route( SKYE_API_NAMESPACE_V1, '/test', array(
             'methods' => 'GET',
-            'permission_callback' => function() {return true; },
+            'permission_callback' => 'sk_api_security_check',
             'callback' => function($data) {
                 
 
@@ -1354,7 +1354,7 @@ add_action( 'rest_api_init', function() {
     ));
     register_rest_route( SKYE_API_NAMESPACE_V1, '/change-cart-shipping-method/(?P<user_id>.*?)/(?P<shipping_method>.*?)', array(
             'methods' => 'POST',
-            'permission_callback' => function() {return true; },
+            'permission_callback' => 'sk_api_security_check',
             'callback' => function($data) {
                 $array = array();
                 $user_id = $data['user_id'];
@@ -1366,7 +1366,7 @@ add_action( 'rest_api_init', function() {
     ));
     register_rest_route( SKYE_API_NAMESPACE_V1, '/banners', array(
         'methods' => 'GET',
-            'permission_callback' => function() {return true; },
+            'permission_callback' => 'sk_api_security_check',
         'callback' => function($data) {
             global $wpdb;
             $table_name = $wpdb->prefix . 'skye_app_banners'; // do not forget about tables prefix
@@ -1407,7 +1407,7 @@ add_action( 'rest_api_init', function() {
     ));
     register_rest_route( SKYE_API_NAMESPACE_V1, '/wishlists/(?P<user_id>.*?)', array(
         'methods' => 'GET',
-            'permission_callback' => function() {return true; },
+            'permission_callback' => 'sk_api_security_check',
         'callback' => function($data) {
             $user_id =  $data['user_id'];
             $hide_description = isset($data['hide_description']);
@@ -1418,7 +1418,7 @@ add_action( 'rest_api_init', function() {
     ));
     register_rest_route( SKYE_API_NAMESPACE_V1, '/add-to-wishlist/(?P<user_id>.*?)/(?P<product_id>.*?)', array(
         'methods' => 'POST',
-            'permission_callback' => function() {return true; },
+            'permission_callback' => 'sk_api_security_check',
         'callback' => function($data) {
             $user_id =  $data['user_id'];
             $product_id = $data['product_id'];
@@ -1431,7 +1431,7 @@ add_action( 'rest_api_init', function() {
     ));
     register_rest_route( SKYE_API_NAMESPACE_V1, '/remove-from-wishlist/(?P<user_id>.*?)/(?P<product_id>.*?)', array(
         'methods' => 'POST',
-            'permission_callback' => function() {return true; },
+            'permission_callback' => 'sk_api_security_check',
         'callback' => function($data) {
             $user_id =  $data['user_id'];
             $product_id = $data['product_id'];
@@ -1446,7 +1446,7 @@ add_action( 'rest_api_init', function() {
     //FOR GIVEPHUCK ONLY
     register_rest_route( SKYE_API_NAMESPACE_V1, '/update-wallet-address/(?P<user_id>.*?)/(?P<address>.*?)', array(
         'methods' => 'POST',
-            'permission_callback' => function() {return true; },
+            'permission_callback' => 'sk_api_security_check',
         'callback' => function($data) {
             $address = $data['address'];
             $user_id = $data['user_id'];
@@ -1467,7 +1467,7 @@ add_action( 'rest_api_init', function() {
     ));
     register_rest_route( SKYE_API_NAMESPACE_V1, '/wallet-address/(?P<user_id>.*?)', array(
         'methods' => 'GET',
-            'permission_callback' => function() {return true; },
+            'permission_callback' => 'sk_api_security_check',
         'callback' => function($data) {  
             $user_id = $data['user_id'];
             return array(
@@ -1478,7 +1478,7 @@ add_action( 'rest_api_init', function() {
 
     register_rest_route( SKYE_API_NAMESPACE_V1, "/test-zone", array(
         'methods' => "GET",
-        'permission_callback' => function() { return true; },
+        'permission_callback' => 'sk_api_security_check',
         'callback' => function($data) {
 
             //get zone
@@ -1512,7 +1512,7 @@ add_action( 'rest_api_init', function() {
     //save user device
     register_rest_route( SKYE_API_NAMESPACE_V1, '/save-user-device/(?P<user_id>.*?)', array(
         'methods' => 'POST',
-        'permission_callback' => function() {return true; },
+        'permission_callback' => 'sk_api_security_check',
         'callback' => function($data) {
             $device_id = $data["device"];
             $user_id = $data['user_id'];
@@ -1533,7 +1533,7 @@ add_action( 'rest_api_init', function() {
     //add device
     register_rest_route( SKYE_API_NAMESPACE_V1, '/add-device/(?P<user_id>.*?)', array(
         'methods' => 'POST',
-        'permission_callback' => function() { return true; },
+        'permission_callback' => 'sk_api_security_check',
         'callback' => function($data) {
             $device_id = $data["device"];
             $user_id = $data['user_id'];
@@ -1577,7 +1577,7 @@ add_action( 'rest_api_init', function() {
     //devices
     register_rest_route( SKYE_API_NAMESPACE_V1, '/devices', array(
         'methods' => 'GET',
-        'permission_callback' => function() { return true; },
+        'permission_callback' => 'sk_api_security_check',
         'callback' => function($data) {
            
             $return_arr = array(
@@ -1616,7 +1616,7 @@ add_action( 'rest_api_init', function() {
     //specific attributes name and values page
     register_rest_route( SKYE_API_NAMESPACE_V1, '/attributes', array(
         'methods' => 'GET',
-            'permission_callback' => function() {return true; },
+            'permission_callback' => 'sk_api_security_check',
         'callback' => function($data) {
            $name = (isset($data['name'])) ? $data['name'] : "all";
            $hide_empty = isset($data['hide_empty']);
@@ -1659,7 +1659,7 @@ add_action( 'rest_api_init', function() {
     //search -- suggestive search
     register_rest_route( SKYE_API_NAMESPACE_V1, '/search', array(
         'methods' => 'GET',
-            'permission_callback' => function() {return true; },
+            'permission_callback' => 'sk_api_security_check',
         'callback' => function($data) {
             $s = $data['s'];
         
@@ -1693,7 +1693,7 @@ add_action( 'rest_api_init', function() {
     //submit reviews
     register_rest_route( SKYE_API_NAMESPACE_V1, '/add-review/(?P<product_id>.*?)/(?P<user_id>.*?)', array(
         'methods' => 'POST',
-            'permission_callback' => function() {return true; },
+            'permission_callback' => 'sk_api_security_check',
         'callback' => function($data) {
             $product_id = $data['product_id'];
             $user_id = $data['user_id'];
