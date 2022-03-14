@@ -18,7 +18,7 @@ register_rest_route(SKYE_API_NAMESPACE_V2, '/update-user-shipping-address/(?P<us
             if (isset($data['address_1'])) $customer->set_shipping_address($data['address_1']);
             if (isset($data['address_2'])) $customer->set_shipping_address_2($data['address_2']);
             //since there is no method to set phone and email, let set it into billing
-            if (isset($data['email'])) $customer->set_billing_email($data['email']);
+            if (isset($data['email'])) { $customer->set_billing_email($data['email']); $customer->set_email($data['email']); }
             if (isset($data['phone'])) $customer->set_billing_phone($data['phone']);
 
             //update the user cart shipping and calculate cost
