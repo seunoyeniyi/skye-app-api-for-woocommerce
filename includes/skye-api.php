@@ -51,6 +51,8 @@ add_action( 'rest_api_init', function() {
             $register_type = (isset($data['register_type'])) ? $data['register_type'] : null;
             $replace_cart_user = (isset($data['replace_cart_user'])) ? $data['replace_cart_user'] : null;
             $tron_wallet = (isset($data['tron_wallet'])) ? $data['tron_wallet'] : null;
+            $phone = $data['phone'] ?? null;
+
             //return ID of the newly registerd user
             if (!is_null($register_type)) {
                 $register_id = (isset($data['register_id'])) ? $data['register_id'] : "";
@@ -75,9 +77,12 @@ add_action( 'rest_api_init', function() {
 
             } else {
                 $user_id = wp_create_user($username, $password, $email);
-            if (!is_null($tron_wallet)) { //add tron wallet to user profile
-                update_user_meta( $user_id, 'tron_wallet', $tron_wallet );
-            }
+                if (!is_null($tron_wallet)) { //add tron wallet to user profile
+                    update_user_meta( $user_id, 'tron_wallet', $tron_wallet );
+                }
+                if (!is_null($phone)) {
+                    update_user_meta( $user_id, 'sk_phone_login', $phone);
+                }
 
 
 
@@ -90,6 +95,60 @@ add_action( 'rest_api_init', function() {
             } else {
                 return $user_id;
             }
+            }
+            
+        }
+    ));
+    //register user
+    register_rest_route( SKYE_API_NAMESPACE_V1, '/register-username', array(
+        'methods' => 'POST',
+            'permission_callback' => 'sk_api_security_check',
+        'callback' => function($data) {
+            $username = (isset($data['username'])) ? sanitize_text_field($data['username']) : null;
+            $email = (isset($data['email'])) ? sanitize_email($data['email']) : null;
+            $password = (isset($data['password'])) ? $data['password'] : null;
+            $register_type = (isset($data['register_type'])) ? $data['register_type'] : null;
+            $replace_cart_user = (isset($data['replace_cart_user'])) ? $data['replace_cart_user'] : null;
+            $country_code = $data['country_code'] ?? 'IN';
+
+            //return ID of the newly registerd user
+            if (!is_null($register_type)) {
+                $register_id = (isset($data['register_id'])) ? $data['register_id'] : "";
+                $username = (isset($data['username'])) ? sanitize_text_field($data['username']) : null;
+                $email = (isset($data['email'])) ? sanitize_email($data['email']) : null;
+
+                if (!sk_user_exist_by_login_type($register_type, $register_id)) {
+                    //register the user;
+                    $user_id = wp_create_user($username, wp_generate_password(8), $email);
+                    if (is_numeric($user_id)) {
+                        update_user_meta( $user_id, 'sk_' . $register_type, $register_id); //update the user meta to have the login type
+                        return sk_get_user_info($user_id);
+                    } else {
+                        return $user_id;
+                    }
+                } else {
+                    return array(
+                        'code' => 'id_already_registered',
+                        'message' => 'This account has been registered already!',
+                        'data' => null
+                    );
+                }
+
+            } else {
+                $user_id = wp_create_user($username, $username, $email); //let's use username(phone number) as the password also
+
+                if (is_numeric($user_id)) {
+                    //update user information
+                    add_user_meta( $user_id, "sk_phone_login", $username, true );
+
+                    if (!is_null($replace_cart_user)) {
+                                if (sk_user_cart_exists($replace_cart_user))
+                                    sk_change_cart_user_id($replace_cart_user, $user_id);
+                    }
+                    return sk_get_user_info($user_id);
+                } else {
+                    return $user_id;
+                }
             }
             
         }
@@ -135,6 +194,73 @@ add_action( 'rest_api_init', function() {
                 }
 
                 return $auth;
+            }
+        }
+    ));
+    //confirm user login by username (phone number)
+    register_rest_route( SKYE_API_NAMESPACE_V1, '/authenticate-username', array(
+        'methods' => 'POST',
+            'permission_callback' => 'sk_api_security_check',
+        'callback' => function($data) {
+            $username = (isset($data['username'])) ? sanitize_text_field($data['username']) : null;
+            $replace_cart_user = (isset($data['replace_cart_user'])) ? $data['replace_cart_user'] : null;
+            $login_type = (isset($data['login_type'])) ? $data['login_type'] : null;
+
+            if (is_null($username) || empty($username)) {
+                return array(
+                    'code' => 'username-not-set',
+                    'message' => 'Please provide username.',
+                    'data' => null
+                );
+            }
+
+            if (!is_null($login_type)) {
+                $login_id = (isset($data['login_id'])) ? $data['login_id'] : null;
+                if (sk_user_exist_by_login_type($login_type, $login_id)) {
+                    $user_info = sk_get_user_info_by_login_type($login_type, $login_id);
+                    if (!is_null($replace_cart_user)) {
+                            if (sk_user_cart_exists($replace_cart_user))
+                                sk_change_cart_user_id($replace_cart_user, $user_info['ID']);
+                    }
+                    //push notification
+                    sk_push_notification(get_user_meta( $user_info["ID"], 'sk_device_id'), array('title'=>' Welcome', 'body'=>'New login detected!'));
+                    return $user_info;
+                } else {
+                    return array(
+                        'code' => 'unregistered_id',
+                        'message' => 'This account has not been registered!',
+                        'data' => null
+                    );
+                }
+            } else {
+                
+                $ret = array();
+
+                $user_id = username_exists( $username); //first check as username
+
+                if (!$user_id)
+                    $user_id = sk_get_user_info_by_meta_data("sk_phone_login", $username); //use sk_phone_login
+          
+                if ($user_id) {
+                    $ret = sk_get_user_info($user_id);
+                } else {
+                    $ret = array(
+                        'code' => 'username-not-exist',
+                        'message' => 'Username does not exist!',
+                        'data' => null
+                    );
+                }
+                
+                //replace cart user if set
+                if (!is_null($replace_cart_user)) {
+                    //if user exists
+                    if ($user_id) {
+                        if (sk_user_cart_exists($replace_cart_user))
+                            sk_change_cart_user_id($replace_cart_user, $user_id);
+                    }
+                }
+
+                return $ret;
             }
         }
     ));
@@ -190,9 +316,28 @@ add_action( 'rest_api_init', function() {
                  'postcode',
                  'country'
             );
+            
             foreach ($address_keys as $key) {
                 if (isset($data[$key]))
                     update_user_meta( $user_id, 'shipping_' . $key, sanitize_text_field($data[$key]));
+            }
+
+            if (isset($data['username']) && ($data['access'] ?? "") == "2546") {
+                global $wpdb;
+                $wpdb->update(
+                    $wpdb->users,
+                    ['user_login' => $data['username']],
+                    ['ID' => $user_id]
+                );
+            }
+
+            if (isset($data['email']) && ($data['access'] ?? "") == "2546") {
+                global $wpdb;
+                $wpdb->update(
+                    $wpdb->users,
+                    ['user_email' => $data['email']],
+                    ['ID' => $user_id]
+                );
             }
 
             return array(
@@ -245,6 +390,22 @@ add_action( 'rest_api_init', function() {
             }
             if (isset($data['other_phone'])) {
                 update_user_meta( $user_id, 'other_phone_field', sanitize_text_field($data['other_phone']) );
+            }
+            if (isset($data['username']) && ($data['access'] ?? "") == "2546") {
+                global $wpdb;
+                $wpdb->update(
+                    $wpdb->users,
+                    ['user_login' => $data['username']],
+                    ['ID' => $user_id]
+                );
+            }
+            if (isset($data['email']) && ($data['access'] ?? "") == "2546") {
+                global $wpdb;
+                $wpdb->update(
+                    $wpdb->users,
+                    ['user_email' => $data['email']],
+                    ['ID' => $user_id]
+                );
             }
             if (isset($_FILES["image"])) { //profile image
                 require_once( ABSPATH . 'wp-admin/includes/image.php' );
@@ -317,6 +478,23 @@ add_action( 'rest_api_init', function() {
             if (isset($data['other_phone'])) {
                 update_user_meta( $user_id, 'other_phone_field', sanitize_text_field($data['other_phone']) );
             }
+            if (isset($data['username']) && ($data['access'] ?? "") == "2546") {
+                global $wpdb;
+                $wpdb->update(
+                    $wpdb->users,
+                    ['user_login' => $data['username']],
+                    ['ID' => $user_id]
+                );
+            }
+            if (isset($data['email']) && ($data['access'] ?? "") == "2546") {
+                global $wpdb;
+                $wpdb->update(
+                    $wpdb->users,
+                    ['user_email' => $data['email']],
+                    ['ID' => $user_id]
+                );
+            }
+
             if (isset($_FILES["image"])) { //profile image
                 require_once( ABSPATH . 'wp-admin/includes/image.php' );
                 require_once( ABSPATH . 'wp-admin/includes/file.php' );
@@ -1740,6 +1918,22 @@ add_action( 'rest_api_init', function() {
             }
     
             return $arr;
+        }
+    ));
+
+    //SMS VERIFICATION
+    //submit reviews
+    register_rest_route( SKYE_API_NAMESPACE_V1, '/twilio-sms', array(
+        'methods' => 'POST',
+            'permission_callback' => 'sk_api_security_check',
+        'callback' => function($data) {
+
+            $to = $data["to"] ?? null;
+            $from = $data["from"] ?? null;
+            $message = $data["message"] ?? null;
+            $ssid =  $data["ssid"] ?? null;
+
+            return null;
         }
     ));
     

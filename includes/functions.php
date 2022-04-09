@@ -1923,3 +1923,23 @@ if (!function_exists('sk_generate_random_key')) {
         return $randomString;
     }
 }
+
+
+if (!function_exists('sk_get_user_info_by_meta_data')) {
+    function sk_get_user_info_by_meta_data( $meta_key, $meta_value ) {
+
+        // Query for users based on the meta data
+        $user_query = new WP_User_Query(
+            array(
+                'meta_key'	  =>	$meta_key,
+                'meta_value'	=>	$meta_value
+            )
+        );
+    
+        // Get the results from the query, returning the first user
+        $users = $user_query->get_results();
+    
+        return $users[0]->ID;
+    
+    } // end get_user_by_meta_data
+}

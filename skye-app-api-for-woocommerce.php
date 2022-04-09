@@ -11,13 +11,13 @@ if(!defined('ABSPATH')) { exit; }
 
 define("SKYE_API_NAMESPACE_V1", "skye-api/v1");
 define("SKYE_API_NAMESPACE_V2", "skye-api/v2");
-define("SKYE_ALLOW_SECURITY", true);
-define("SKYE_ALLOW_API_TOKEN_KEY", true);
+define("SKYE_ALLOW_SECURITY", false);
+define("SKYE_ALLOW_API_TOKEN_KEY", false);
 define("SKYE_ALLOW_DELIVERY_DRIVER", false);
 define("SKYE_ALLOW_SLIDE_BANNER", true);
-define("SKYE_ALLOW_BIG_BANNER", false);
-define("SKYE_ALLOW_CAROUSEL_BANNER", false);
-define("SKYE_ALLOW_THIN_BANNER", false);
+define("SKYE_ALLOW_BIG_BANNER", true);
+define("SKYE_ALLOW_CAROUSEL_BANNER", true);
+define("SKYE_ALLOW_THIN_BANNER", true);
 define("SKYE_ALLOW_GRID_BANNER", true);
 define("SKYE_ALLOW_VIDEO_BANNER", false);
 
