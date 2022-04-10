@@ -28,6 +28,10 @@ add_action( 'rest_api_init', function() {
                 //$arr['comments_rss2_url'] = get_bloginfo('comments_rss2_url'); // – The comments RSS 2.0 feed URL (/comments/feed)
                 $arr["site_icon"] = get_site_icon_url();
 
+                //IMAGES RESOURCE
+                $arr["app_splash_logo"] = get_option('sk_app_splash_logo', 0);
+                $arr["app_main_logo"] = get_option('sk_app_main_logo', 0);
+
                 //BANNERS
                 $arr["enable_slide_banners"] = get_option('sk_enable_slide_banners', 0);
                 $arr["enable_big_banners"] = get_option('sk_enable_big_banners', 0);

@@ -2,6 +2,12 @@ div.push-notification-wrap {
     padding: 20px;
     background-color: white;
 }
+div.sk-admin-middle-wrap {
+    padding: 20px;
+}
+div.middle-border {
+    border: 1px solid grey;
+}
 @media(min-width: 768px) {
     div.push-notification-wrap {
        margin-left: 300px;
@@ -9,4 +15,9 @@ div.push-notification-wrap {
        background-color: white;
        padding: 20px 40px 20px 40px;
     }
+    div.sk-admin-middle-wrap {
+        margin-left: 300px;
+        margin-right: 300px;
+        padding: 20px 40px 20px 40px;
+     }
 }

@@ -20,6 +20,7 @@ define("SKYE_ALLOW_CAROUSEL_BANNER", true);
 define("SKYE_ALLOW_THIN_BANNER", true);
 define("SKYE_ALLOW_GRID_BANNER", true);
 define("SKYE_ALLOW_VIDEO_BANNER", false);
+define("SKYE_ALLOW_RESOURCES", true);
 
 
 function find_matching_product_variation_id($product_id, $attributes)
