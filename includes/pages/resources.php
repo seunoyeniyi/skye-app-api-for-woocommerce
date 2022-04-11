@@ -70,7 +70,7 @@
             <div style="line-height: 60px;">
                 <input type="hidden" id="splash_logo_id" name="splash_logo_id" value="<?php echo ($splash_logo) ? $splash_logo : 0; ?>">
                 <button type="button" class="upload_splash_logo_button button">Upload/Add image</button>
-                <button type="button" class="remove_splash_logo_button button" style="display: none;">Remove image</button>
+                <button type="button" class="remove_splash_logo_button button" style="<?php if (!$splash_logo) { echo "display: none;"; } ?>">Remove image</button>
             </div>
             <script type="text/javascript">
                 // Only show the "remove icon" button when needed
@@ -161,7 +161,7 @@
                 <div style="line-height: 60px;">
                     <input type="hidden" id="main_logo_id" name="main_logo_id" value="<?php echo ($main_logo) ? $main_logo : 0; ?>">
                     <button type="button" class="upload_main_logo_button button">Upload/Add image</button>
-                    <button type="button" class="remove_main_logo_button button" style="display: none;">Remove image</button>
+                    <button type="button" class="remove_main_logo_button button" style="<?php if (!$main_logo) { echo "display: none;"; } ?>">Remove image</button>
                 </div>
                 <script type="text/javascript">
                     // Only show the "remove icon" button when needed

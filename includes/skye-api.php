@@ -29,8 +29,13 @@ add_action( 'rest_api_init', function() {
                 $arr["site_icon"] = get_site_icon_url();
 
                 //IMAGES RESOURCE
-                $arr["app_splash_logo"] = get_option('sk_app_splash_logo', 0);
-                $arr["app_main_logo"] = get_option('sk_app_main_logo', 0);
+                $splash_logo_id = get_option('sk_app_splash_logo', 0);
+                $main_logo_id = get_option('sk_app_main_logo', 0);
+                $splash_logo = wp_get_attachment_image_src($splash_logo_id, null);
+                $main_logo = wp_get_attachment_image_src($main_logo_id, null);
+
+                $arr["app_splash_logo"] = ($splash_logo) ? $splash_logo[0] : 0;
+                $arr["app_main_logo"] = ($main_logo) ? $main_logo[0] : 0;
 
                 //BANNERS
                 $arr["enable_slide_banners"] = get_option('sk_enable_slide_banners', 0);
