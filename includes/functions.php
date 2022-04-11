@@ -135,7 +135,6 @@ if (!function_exists('sk_get_product_array')) {
         'menu_order' => $product->get_menu_order(),
         'virtual' => $product->get_virtual(),
         'permalink' => get_permalink($product->get_id()),
-		
 		'in_stock' => $product->is_in_stock(),
 		'stock_status' => $product->get_stock_status(),
 
@@ -682,6 +681,7 @@ if (!function_exists("sk_get_variation_attributes")) {
 
 
 
+
 if (!function_exists('sk_cart_json_handler')) {
     function sk_cart_json_handler($user_id, $data, $old_cart_json = null) { //return array
     $product_id = $data['product_id'];
@@ -722,10 +722,42 @@ if (!function_exists('sk_cart_json_handler')) {
             // // Get cart totals
             $return_array['contents_count'] = 1;
             $return_array['has_coupon'] = false;
+            $return_array['is_new_customer'] = false;
+
+            if (SKYE_ENABLE_COUPON_FIRST_ORDER && !$return_array['has_coupon']) {
+                $query = new WC_Order_Query(array(
+                    'customer_id' => $user_id,
+                    'user_id' => $user_id,
+                    'return' => 'ids',
+                    'status' => array('wc-processing', 'wc-completed')
+                ));
+                $orders = $query->get_orders();
+                $return_array['has_coupon'] = (count($orders) < 1) ? true : false;
+                $return_array['coupon'] = (count($orders) < 1) ? SKYE_FIRST_ORDER_COUPON_CODE : 0;
+                $return_array['is_new_customer'] = (count($orders) < 1) ? true : false;
+            }
+
             $return_array['has_shipping'] = false;
             $return_array['subtotal'] = $product->get_price() * $quantity;
             $return_array['total'] = $product->get_price() * $quantity;
             $return_array['coupon_discount'] = 0;
+
+            
+            if ($return_array['has_coupon']) {
+                //calculate coupon price for the cart
+                $subtotal = $return_array['subtotal'];
+                $coup = new WC_Coupon($return_array['coupon'] ?? 0);
+                $items_count = $return_array['contents_count'];
+                if ($coup->get_discount_type() == "percent") { //calculate minus percentage of subtotal
+                    $return_array['coupon_discount'] = (($coup->get_amount() / 100) * $subtotal);
+                } elseif ($coup->get_discount_type() == "fixed_cart") { // minus amount from subtotal
+                    $return_array['coupon_discount'] = $coup->get_amount();
+                } elseif ($coup->get_discount_type() == "fixed_product") { // multiply amount by number of items in cart (and minus result from to subtotal)
+                    $return_array['coupon_discount'] = ($coup->get_amount() * $items_count);
+                }
+
+            }
+
             $return_array['shipping_cost'] = 0;
         
             ###################//WOOCOMMERCE REWARD POINTS PLUGIN #####################
@@ -932,6 +964,21 @@ if (!function_exists('sk_cart_json_handler')) {
         $return_array['shipping_cost'] = isset($return_array['shipping_cost']) ? $return_array['shipping_cost'] : 0;
         $subtotal = $return_array['subtotal'];
         $shipping_cost = $return_array['shipping_cost'];
+
+        if (SKYE_ENABLE_COUPON_FIRST_ORDER && !$return_array['has_coupon']) {
+            $query = new WC_Order_Query(array(
+                'customer_id' => $user_id,
+                'user_id' => $user_id,
+                'return' => 'ids',
+                'status' => array('wc-processing', 'wc-completed')
+            ));
+            $orders = $query->get_orders();
+            $return_array['has_coupon'] = (count($orders) < 1) ? true : false;
+            $return_array['coupon'] = (count($orders) < 1) ? SKYE_FIRST_ORDER_COUPON_CODE : 0;
+            $return_array['is_new_customer'] = (count($orders) < 1) ? true : false;
+        }
+
+
         if (isset($return_array['has_coupon'])) {
             if ($return_array['has_coupon']) {
                 //calculate coupon price for the cart
@@ -947,7 +994,13 @@ if (!function_exists('sk_cart_json_handler')) {
 
             }
         }
-        $return_array['coupon_discount'] = (isset($return_array['coupon_discount'])) ? $return_array['coupon_discount'] :0;
+
+
+
+
+        $return_array['coupon_discount'] = (isset($return_array['coupon_discount'])) ? $return_array['coupon_discount'] : 0;
+
+
         //calculate total
         $coupon_discount = $return_array['coupon_discount'];
         $return_array['total'] = ($subtotal + $shipping_cost) - $coupon_discount;

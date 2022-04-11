@@ -21,6 +21,8 @@ define("SKYE_ALLOW_THIN_BANNER", true);
 define("SKYE_ALLOW_GRID_BANNER", true);
 define("SKYE_ALLOW_VIDEO_BANNER", false);
 define("SKYE_ALLOW_RESOURCES", true);
+define("SKYE_ENABLE_COUPON_FIRST_ORDER", true);
+define("SKYE_FIRST_ORDER_COUPON_CODE","NEWCUSTOMER");
 
 
 function find_matching_product_variation_id($product_id, $attributes)
