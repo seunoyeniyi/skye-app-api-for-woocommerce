@@ -129,6 +129,7 @@ if (!function_exists('sk_get_product_array')) {
         'status' => $product->get_status(),
         'featured' => $product->get_featured(),
         'catalog_visibility' => $product->get_catalog_visibility(),
+        'short_description' => $product->get_short_description(),
         'description' => $product->get_description(),
         'sku' => $product->get_sku(),
         'menu_order' => $product->get_menu_order(),
