@@ -1348,7 +1348,8 @@ add_action( 'rest_api_init', function() {
                         'image' => wp_get_attachment_url( get_term_meta( $category->term_id, 'thumbnail_id', true ) ),
                         'icon' => wp_get_attachment_url( get_term_meta( $category->term_id, 'product_cat_icon', true ) ),
                         'link' => get_term_link($category->slug, 'product_cat'),
-                        'count' => $category->count
+                        'count' => $category->count,
+                        'show_in_app' => get_term_meta( $category->term_id, 'cat_show_in_app', true )
                     );
                     $sub_cats = get_categories(array(
                         'taxonomy' => 'product_cat',
@@ -1371,7 +1372,8 @@ add_action( 'rest_api_init', function() {
                                 'image' => wp_get_attachment_url( get_woocommerce_term_meta( $cat->term_id, 'thumbnail_id', true ) ),
                                 'icon' => wp_get_attachment_url( get_term_meta( $cat->term_id, 'product_cat_icon', true ) ),
                                 'link' => get_term_link($cat->slug, 'product_cat'),
-                                'count' => $cat->count
+                                'count' => $cat->count,
+                                'show_in_app' => get_term_meta( $cat->term_id, 'cat_show_in_app', true )
                             );
                         }
                     }
@@ -1385,7 +1387,8 @@ add_action( 'rest_api_init', function() {
                             'image' => wp_get_attachment_url( get_woocommerce_term_meta( $category->term_id, 'thumbnail_id', true ) ),
                             'icon' => wp_get_attachment_url( get_term_meta( $category->term_id, 'product_cat_icon', true ) ),
                             'link' => get_term_link($category->slug, 'product_cat'),
-                            'count' => $category->count
+                            'count' => $category->count,
+                            'show_in_app' => get_term_meta( $category->term_id, 'cat_show_in_app', true )
                             
                         );
                         $sub_cats = get_categories(array(
@@ -1409,7 +1412,8 @@ add_action( 'rest_api_init', function() {
                                     'image' => wp_get_attachment_url( get_woocommerce_term_meta( $cat->term_id, 'thumbnail_id', true ) ),
                                     'icon' => wp_get_attachment_url( get_term_meta( $cat->term_id, 'product_cat_icon', true ) ),
                                     'link' => get_term_link($cat->slug, 'product_cat'),
-                                    'count' => $cat->count
+                                    'count' => $cat->count,
+                                    'show_in_app' => get_term_meta( $cat->term_id, 'cat_show_in_app', true )
                                 );
                             }
                         }

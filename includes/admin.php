@@ -64,7 +64,7 @@ function skye_apps_scripts_func($hook)
 
 
 // CUSTOM FIELD FOR ICON UPLOAD FOR CATEGORIES
-function sk_category_icon_fields($tag) { 
+function sk_category_fields($tag) { 
     $cat_id = $tag->term_id;
     // $cat_meta = get_option( "product_cat_{$cat_id}_icon");
     $cat_meta = get_term_meta( $cat_id, 'product_cat_icon', true );
@@ -140,19 +140,42 @@ function sk_category_icon_fields($tag) {
                 <div class="clear"></div>
             </td>
     </tr>
-    <?php }
-add_action('product_cat_edit_form_fields', 'sk_category_icon_fields');
+    <?php 
+    
+    $cat_meta = get_term_meta( $cat_id, 'cat_show_in_app', true );
+
+    ?>
+    <tr class="form-field">
+        <th scope="row" valign="top"><label for=""><?php _e('Show in App'); ?></label></th>
+        <td>
+        <label for="show_in_app">
+			<input name="show_in_app" id="show_in_app" type="checkbox" class="" <?php echo ($cat_meta != "false") ? "checked" : ""; ?>> Enable
+        </label>
+                <div class="clear"></div>
+        </td>
+    </tr> 
+    <?php
+
+
+}
+add_action('product_cat_edit_form_fields', 'sk_category_fields');
 
 //SAVE
 // save extra category extra fields hook
-function sk_save_category_icon_fileds( $term_id ) {
-if ( isset( $_POST['product_cat_icon_id'] ) ) {
-    // update_option( "product_cat_{$term_id}_icon", $_POST['product_cat_icon_id']);
-    update_term_meta($term_id,  'product_cat_icon',  $_POST['product_cat_icon_id']);
+function sk_save_category_fileds( $term_id ) {
+    if ( isset( $_POST['product_cat_icon_id'] ) ) {
+        // update_option( "product_cat_{$term_id}_icon", $_POST['product_cat_icon_id']);
+        update_term_meta($term_id,  'product_cat_icon',  $_POST['product_cat_icon_id']);
+    }
+    
+    update_term_meta($term_id,  'cat_show_in_app',  isset( $_POST['show_in_app'] ) ? "true":"false");
+    
 }
-}
-add_action ( 'created_product_cat', 'sk_save_category_icon_fileds' );
-add_action ( 'edited_product_cat', 'sk_save_category_icon_fileds' );
+
+
+
+add_action ( 'created_product_cat', 'sk_save_category_fileds' );
+add_action ( 'edited_product_cat', 'sk_save_category_fileds' );
 
 
 
