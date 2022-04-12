@@ -1341,6 +1341,7 @@ add_action( 'rest_api_init', function() {
                     continue;
             }
                 if ($with_sub) { //will join sub categories to the parent list
+                    if (get_term_meta( $category->term_id, 'cat_show_in_app', true ) == "false") continue;
                     $cat_arr = array(
                         'ID' => $category->term_id,
                         'name' => $category->name,
@@ -1365,6 +1366,7 @@ add_action( 'rest_api_init', function() {
                     if ($sub_cats) {
                         $cat_arr['sub_cats'] = array();
                         foreach ($sub_cats as $cat) {
+                            if (get_term_meta( $cat->term_id, 'cat_show_in_app', true ) == "false") continue;
                             $cat_arr['sub_cats'][] = array(
                                 'ID' => $cat->term_id,
                                 'name' => $cat->name,
@@ -1380,6 +1382,7 @@ add_action( 'rest_api_init', function() {
                     $array_return[] = $cat_arr;
                 } else { //will remove sub categories from the parent list
                     if ($category->category_parent == 0) {
+                        if (get_term_meta( $category->term_id, 'cat_show_in_app', true ) == "false") continue;
                         $cat_arr = array(
                             'ID' => $category->term_id,
                             'name' => $category->name,
@@ -1405,6 +1408,7 @@ add_action( 'rest_api_init', function() {
                         if ($sub_cats) {
                             $cat_arr['sub_cats'] = array();
                             foreach ($sub_cats as $cat) {
+                                if (get_term_meta( $cat->term_id, 'cat_show_in_app', true ) == "false") continue;
                                 $cat_arr['sub_cats'][] = array(
                                     'ID' => $cat->term_id,
                                     'name' => $cat->name,
