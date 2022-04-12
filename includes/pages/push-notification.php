@@ -8,6 +8,9 @@ if ($_SERVER['REQUEST_METHOD'] == "POST" && isset($_POST['notify'])) {
     $title = $_POST['notification_title'];
     $text = $_POST['notification_text'];
     $image = $_POST['notification_image'];
+    $schedule_type = $_POST['schedule_type'];
+    $schedule_date = $_POST['notification_schedule_date'];
+    $schedule_time = $_POST['notification_schedule_time'];
     $option = get_option( "sk_devices", "[]"); //array();
     $devices = json_decode($option, true);
     
@@ -30,6 +33,12 @@ if ($_SERVER['REQUEST_METHOD'] == "POST" && isset($_POST['notify'])) {
     if (!empty($image) && strlen($image) > 10) {
         $data['image'] = $image;
     }
+
+    if ($schedule_type != 'now') {
+        $data["isScheduled"] = "true";
+        $data["scheduledTime"] = $schedule_date . ' ' . $schedule_time;
+    }
+    
     $push = sk_push_notification($devices, $data);
 
    if ($push) { ?>
@@ -121,6 +130,19 @@ if ($_SERVER['REQUEST_METHOD'] == "POST" && isset($_POST['notify'])) {
     <p>
         <label for="notification_text"><b>Notification text </b> </label>
         <textarea name="notification_text" id="notification_text" style="width: 100%;" placeholder="Enter notification text" required></textarea>
+    </p>
+
+    <p>
+        <label for="notification_text"><b>Schedule </b> </label>
+        <select name="schedule_type" onchange="if (this.value == 'date') jQuery('#date-select').show(); else jQuery('#date-select').hide(); ">
+            <option value="now">Send Now</option>
+            <option value="date">Select date & time</option>
+        </select>
+        <div id="date-select" style="display: none;">
+            <input type="date" value="<?php echo date("Y-m-d"); ?>" name="notification_schedule_date" id="notification_schedule_date" style="width: 100%;" placeholder="Schedule Date">
+            <br><br>
+            <input type="time" name="notification_schedule_time" id="notification_schedule_time" style="width: 100%;" placeholder="Schedule Time">
+        </div>
     </p>
 	
 	<p class="submit"><input type="submit" name="notify" id="" class="button button-primary" value="Send Notification" style="width: 100%; padding: 10px;"></p>
