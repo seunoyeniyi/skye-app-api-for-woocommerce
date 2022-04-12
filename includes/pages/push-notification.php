@@ -7,6 +7,7 @@
 if ($_SERVER['REQUEST_METHOD'] == "POST" && isset($_POST['notify'])) {
     $title = $_POST['notification_title'];
     $text = $_POST['notification_text'];
+    $image = $_POST['notification_image'];
     $option = get_option( "sk_devices", "[]"); //array();
     $devices = json_decode($option, true);
     
@@ -22,11 +23,14 @@ if ($_SERVER['REQUEST_METHOD'] == "POST" && isset($_POST['notify'])) {
     }
 
    
-
-    $push = sk_push_notification($devices, array(
+    $data = array(
         'title' => $title,
         'body' => $text
-    ));
+    );
+    if (!empty($image) && strlen($image) > 10) {
+        $data['image'] = $image;
+    }
+    $push = sk_push_notification($devices, $data);
 
    if ($push) { ?>
     <div id="message" class="updated inline"><p style="text-align: center;"><strong>Notification sent to <?php echo count($devices); ?> customers</strong></p></div>
@@ -51,6 +55,68 @@ if ($_SERVER['REQUEST_METHOD'] == "POST" && isset($_POST['notify'])) {
         <label for="notification_title"><b>Notification title</b>  ( 🥳 You can paste any emoji 🥳 )</label>
         <input name="notification_title" type="text" id="notification_title" value="" style="width: 100%;" aria-required="true" autocapitalize="none" autocorrect="off" maxlength="60" placeholder="Enter optional title">
     </p>
+
+    <p>
+        <?php $placeholder = plugin_dir_url("") . "skye-app-api-for-woocommerce/" . "assets/woocommerce-placeholder-324x324.png"; ?>
+        <label for="notification_text"><b>Image (Optional) </b> </label>
+        <div id="noty_image" style="float: left; margin-right: 10px;">
+                <img src="<?php echo $placeholder; ?>" width="120px" height="120px">
+        </div>
+        <input type="hidden" name="notification_image" id="notification_image">
+        <button type="button" class="upload_image_button button">Upload/Add image</button>
+        <button type="button" class="remove_image_button button" style="display: none;">Remove image</button>
+    
+        <script type="text/javascript">
+               
+                // Uploading files
+                var sk_image_frame;
+
+                jQuery(document).on('click', '.upload_image_button', function(event) {
+
+                    event.preventDefault();
+
+                    // If the media frame already exists, reopen it.
+                    if (sk_image_frame) {
+                        sk_image_frame.open();
+                        return;
+                    }
+
+                    // Create the media frame.
+                    sk_image_frame = wp.media.frames.downloadable_file = wp.media({
+                        title: 'Choose an image',
+                        button: {
+                            text: 'Use image'
+                        },
+                        multiple: false
+                    });
+
+                    // When an image is selected, run a callback.
+                    sk_image_frame.on('select', function() {
+                        var attachment = sk_image_frame.state().get('selection').first().toJSON();
+                        var attachment_thumbnail = attachment.sizes.thumbnail || attachment.sizes.full;
+
+                        jQuery('#notification_image').val(attachment_thumbnail.url);
+                        jQuery('#noty_image').find('img').attr('src', attachment_thumbnail.url);
+                        jQuery('.remove_image_button').show();
+                    });
+
+                    // Finally, open the modal.
+                    sk_image_frame.open();
+                });
+
+                jQuery(document).on('click', '.remove_image_button', function() {
+                    jQuery('#noty_image').find('img').attr('src', '<?php echo $placeholder; ?>');
+                    jQuery('#notification_image').val('');
+                    jQuery('.remove_image_button').hide();
+                    return false;
+                });
+            </script>
+
+
+    </p>
+    <div class="clear"></div>
+
+
 
     <p>
         <label for="notification_text"><b>Notification text </b> </label>
