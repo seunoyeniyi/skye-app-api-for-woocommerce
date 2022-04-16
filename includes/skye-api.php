@@ -145,7 +145,7 @@ add_action( 'rest_api_init', function() {
 
             } else {
                 $user_id = wp_create_user($username, $username, $email); //let's use username(phone number) as the password also
-
+              
                 if (is_numeric($user_id)) {
                     //update user information
                     add_user_meta( $user_id, "sk_phone_login", $username, true );
