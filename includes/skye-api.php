@@ -1857,6 +1857,7 @@ add_action( 'rest_api_init', function() {
             'permission_callback' => 'sk_api_security_check',
         'callback' => function($data) {
             $s = $data['s'];
+            $show_image = isset($data['show_image']);
         
 
             $query_args = array(
@@ -1875,10 +1876,15 @@ add_action( 'rest_api_init', function() {
             
             while($query->have_posts()) {
                 $query->the_post();
-                $product_array[] = array(
-                    'ID' => get_the_ID(),
-                    'name' => get_the_title(),
+                $product = wc_get_product(get_the_ID());
+                $arr = array(
+                    'ID' => $product->get_id(),
+                    'name' => $product->get_name(),
                 );
+                if ($show_image) {
+                    $arr['image'] = wp_get_attachment_url($product->get_image_id());
+                }
+                $product_array[] = $arr;
             }
     
             return $product_array;
