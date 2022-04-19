@@ -170,6 +170,9 @@ if (!function_exists('sk_get_product_array')) {
         //Product available variations
         'variations' => sk_get_product_variations($product->get_id()),
 
+        //size chart
+        'sk_size_chart_image' => (get_post_meta( $product->get_id(), 'sk_product_size_chart', true))  ? wp_get_attachment_url(get_post_meta( $product->get_id(), 'sk_product_size_chart', true)) : "",
+
         // Product Taxonomies
         // 'categories' => $product->get_categories(), //return categires html links
         'categories' => $categories,
