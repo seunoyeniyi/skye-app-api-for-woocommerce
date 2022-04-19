@@ -315,8 +315,9 @@ add_action( 'woocommerce_process_product_meta', 'sk_woocommerce_product_custom_f
 function sk_woocommerce_product_custom_fields_save($post_id)
 {
     // size chart image
-    $size_chart_image_id = $_POST['size_chart_image_id'];
-    if (!empty($size_chart_image_id) && $size_chart_image_id != "0")
+    if (isset($_POST['size_chart_image_id'])) {
+        $size_chart_image_id = $_POST['size_chart_image_id'];
         update_post_meta($post_id, 'sk_product_size_chart', $size_chart_image_id);
+    }
 
 }
