@@ -314,6 +314,16 @@ register_rest_route( SKYE_API_NAMESPACE_V2, '/create-order/(?P<user>.*?)', array
         // set payment gateways
         $payment_gateways = WC()->payment_gateways->payment_gateways();
         if (!is_null($payment_method)) $order->set_payment_method($payment_gateways[$payment_method]);
+
+        //####### remove shipping if already been added ########
+        $ship_items    = (array) $order->get_items('shipping');
+        if ( sizeof( $ship_items ) > 0 ) {
+            // Loop through shipping items
+            foreach ( $ship_items as $item_id => $item ) {
+                $order->remove_item( $item_id );
+            }
+        }
+        //########## remove shipping if already been added #######
         
         //set shipping cost
         $item = new WC_Order_Item_Shipping();
