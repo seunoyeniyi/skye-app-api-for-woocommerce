@@ -1818,7 +1818,7 @@ if (!function_exists("sk_get_wishlist")) {
     }
 }
 if (!function_exists("sk_wishlist_products")) {
-    function sk_wishlist_products($user_id, $data, $hide_description = false, $show_variation) {
+    function sk_wishlist_products($user_id, $data, $hide_description = false, $show_variation = false) {
 
         $paged = isset($data['paged']) ? $data['paged'] : 1;
         $post_per_page = isset($data['per_page']) ? $data['per_page'] : 20;

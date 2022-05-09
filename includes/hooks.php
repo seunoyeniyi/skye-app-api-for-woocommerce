@@ -319,7 +319,16 @@ function sk_app_thankyou(){ if (in_sk_app()) {  ?>
             SkyeApp.orderPlaced();
         })();
     </script>
-    <!-- must be seperated because the android method may raise error for iOS  -->
+    <!-- must be seperated because the android method may raise error for iOS or Flutter  -->
+    <script>
+        (function() {
+            if (SkyeFlutterApp) {
+                SkyeFlutterApp.postMessage("order_placed");
+            }   
+            
+        })();
+    </script>
+    <!-- must be seperated because the android method may raise error for iOS or Flutter  -->
     <script>
         (function() {
             webkit.messageHandlers.skyeHandler.postMessage("any");
