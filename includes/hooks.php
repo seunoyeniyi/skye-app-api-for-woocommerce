@@ -202,7 +202,7 @@ add_action('wp_head', function () {
             footer,
             aside,
             div.storefront-handheld-footer-bar,
-            #glt-translate-trigger, .mailchimp-newsletter, div.bannerContent, div#dijit__TemplatedMixin_0.bannerContent, div.mc-banner {
+            #glt-translate-trigger, .mailchimp-newsletter, div.bannerContent, div#dijit__TemplatedMixin_0.bannerContent, div.mc-banner, div.avada-page-titlebar-wrapper {
                 display: none;
             }
             /* FOR CUSTOM elements to hide, for #id use *id */
@@ -256,6 +256,13 @@ add_action('wp_footer', function () {
 					$("a.cd-top.progress-wrap.active-progress, a.cd-top.progress-wrap").remove();
 					$("div.fb_iframe_widget, div.fb_iframe_widget .iframe, html#facebook, div.fb_dialog_content, div#fb-root").hide();
 				    $("div.fb_iframe_widget, div.fb_iframe_widget .iframe, html#facebook, div.fb_dialog_content, div#fb-root").remove();
+					
+					$("#tidio-chat").hide();
+					$("#tidio-chat").remove();
+					$("div.avada-footer-scripts").hide();
+					$("#wpfront-notification-bar-spacer").hide();
+					$("#wpfront-notification-bar-spacer").remove();
+					$("div.avada-page-titlebar-wrapper").hide();
 				
                         
 
@@ -279,6 +286,15 @@ add_action('wp_footer', function () {
 					    $("a.cd-top.progress-wrap.active-progress, a.cd-top.progress-wrap").remove();
 					    $("div.fb_iframe_widget, div.fb_iframe_widget .iframe, html#facebook, div.fb_dialog_content, div#fb-root").hide();
 					    $("div.fb_iframe_widget, div.fb_iframe_widget .iframe, html#facebook, div.fb_dialog_content, div#fb-root").remove();
+						
+						$("#tidio-chat").hide();
+						$("#tidio-chat").remove();
+						$("div.avada-footer-scripts").hide();
+						$("#wpfront-notification-bar-spacer").hide();
+						$("#wpfront-notification-bar-spacer").remove();
+						$("div.avada-page-titlebar-wrapper").hide();
+						$("div.wp-smartbanner.smartbanner.smartbanner--android.js_smartbanner").hide();
+						$("div.wp-smartbanner.smartbanner.smartbanner--android.js_smartbanner").remove();
 						
                         /* FOR CUSTOM elements to hide, for #id use *id */
                     <?php if (isset($_GET['hide_elements'])) { $elements = str_replace("*", "#", $_GET['hide_elements']);

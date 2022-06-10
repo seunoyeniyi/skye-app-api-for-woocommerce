@@ -2031,3 +2031,35 @@ if (!function_exists('sk_push_notification')) {
         return true;
     }
 }
+
+
+
+if (!function_exists("sk_authenticate")) {
+    function sk_authenticate($username, $password) {
+        $is_email = filter_var($username, FILTER_VALIDATE_EMAIL);
+        
+        $user = get_user_by( $is_email ? "email" : "login", $username);
+
+        if ($user) {
+            //check password
+            if (wp_check_password( $password, $user->user_pass, $user->ID)) {
+                return $user;
+            } else {
+                return array(
+                    "status" => "failed",
+                    "code" => "incorrect-password",
+                    "message" => "Incorrect password",
+                    "data" => null,
+                );
+            }
+        } else {
+            return array(
+                "status" => "failed",
+                "code" => "not-found",
+                "message" => "Username/Email not found.",
+                "data" => null,
+            );
+        }
+
+    }
+}

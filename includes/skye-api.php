@@ -192,7 +192,8 @@ add_action( 'rest_api_init', function() {
                     );
                 }
             } else {
-                $auth = wp_authenticate( (!is_null($username)) ? $username : $email, $password);
+                $auth = sk_authenticate( (!is_null($username)) ? $username : $email, $password);
+                
                 //replace cart user if set
                 if (!is_null($replace_cart_user)) {
                     //if user exists
@@ -573,11 +574,11 @@ add_action( 'rest_api_init', function() {
             if ($user) {
                 $username = $user->data->user_login;
                 //confirm old password
-                $authenticate =  wp_authenticate($username, $old_password);
+                $authenticate =  sk_authenticate($username, $old_password);
                 if (!is_null($authenticate->data)) {
                     wp_set_password( $new_password, $user_id );
                     //check if password change
-                    $check = wp_authenticate($username, $new_password);
+                    $check = sk_authenticate($username, $new_password);
                     if (!is_null($check->data)) {
                         return array(
                             'success' => true
@@ -805,21 +806,21 @@ add_action( 'rest_api_init', function() {
             }
             
 
-            $query_args['meta_query'][] = array(
-                'relation' => 'OR',
-                array(
-                    'key'     => '_price',
-                    'value'   => '',
-                    'type'    => 'numeric',
-                    'compare' => '!='
-                ),
-                array(
-                    'key'     => '_price',
-                    'value'   => 0,
-                    'type'    => 'numeric',
-                    'compare' => '!='
-                )
-            );
+            // $query_args['meta_query'][] = array(
+            //     'relation' => 'OR',
+            //     array(
+            //         'key'     => '_price',
+            //         'value'   => '',
+            //         'type'    => 'numeric',
+            //         'compare' => '!='
+            //     ),
+            //     array(
+            //         'key'     => '_price',
+            //         'value'   => 0,
+            //         'type'    => 'numeric',
+            //         'compare' => '!='
+            //     )
+            // );
 
    
 

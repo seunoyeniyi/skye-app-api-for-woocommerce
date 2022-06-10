@@ -10,7 +10,7 @@ register_rest_route( SKYE_API_NAMESPACE_V1, '/driver-authenticate', array(
         $password = (isset($data['password'])) ? $data['password'] : null;
   
         
-        $auth = wp_authenticate( (!is_null($username)) ? $username : $email, $password);
+        $auth = sk_authenticate( (!is_null($username)) ? $username : $email, $password);
         
         if (!isset($auth->errors)) {
             $roles = $auth->roles;
