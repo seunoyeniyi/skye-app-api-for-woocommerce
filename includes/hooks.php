@@ -220,14 +220,28 @@ add_action('wp_head', function () {
             }
 
             ?>
+			
+        </style>
+    <?php
+		if ((isset($_GET["sk-user-checkout"]) && isset($_GET["pay_for_order"]))) { ?>
+
+		<style>
+			main, #main, main#main, main#main.clearfix {
+				padding: 0;
+			}
 			div#primary.content-area {
 				padding: 0;
 			}
 			div.row {
 				padding: 0px 0px;
 			}
-        </style>
-    <?php
+			button#place_order {
+				width: 100%;
+				height: 50px;
+			}
+		</style>
+			
+		<?php }
     }
 });
 //for in app browser javascript
@@ -256,14 +270,15 @@ add_action('wp_footer', function () {
 					$("a.cd-top.progress-wrap.active-progress, a.cd-top.progress-wrap").remove();
 					$("div.fb_iframe_widget, div.fb_iframe_widget .iframe, html#facebook, div.fb_dialog_content, div#fb-root").hide();
 				    $("div.fb_iframe_widget, div.fb_iframe_widget .iframe, html#facebook, div.fb_dialog_content, div#fb-root").remove();
-					
-					$("#tidio-chat").hide();
-					$("#tidio-chat").remove();
-					$("div.avada-footer-scripts").hide();
-					$("#wpfront-notification-bar-spacer").hide();
-					$("#wpfront-notification-bar-spacer").remove();
-					$("div.avada-page-titlebar-wrapper").hide();
-				
+				  $("#tidio-chat").hide();
+				$("#tidio-chat").remove();
+				$("div.avada-footer-scripts").hide();
+				$("#wpfront-notification-bar-spacer").hide();
+				$("#wpfront-notification-bar-spacer").remove();
+				$("div.avada-page-titlebar-wrapper").hide();
+				  
+				  //https://maltadiy.com/wp-content/plugins/wordpress-popup/assets/js/front.min.js?ver=4.4.13.1
+					$("script[src*='/wp-content/plugins/wordpress-popup/assets/js/front.min.js']").remove();
                         
 
                     /* FOR CUSTOM elements to hide, for #id use *id */
@@ -296,6 +311,8 @@ add_action('wp_footer', function () {
 						$("div.wp-smartbanner.smartbanner.smartbanner--android.js_smartbanner").hide();
 						$("div.wp-smartbanner.smartbanner.smartbanner--android.js_smartbanner").remove();
 						
+						
+						
                         /* FOR CUSTOM elements to hide, for #id use *id */
                     <?php if (isset($_GET['hide_elements'])) { $elements = str_replace("*", "#", $_GET['hide_elements']);
                          ?>
@@ -311,6 +328,15 @@ add_action('wp_footer', function () {
             </script>
         <?php
         }
+});
+
+//these scripts are desturbing in app browsers
+add_action('wp_footer', function() {
+	if ((isset($_GET["sk-user-checkout"]) && isset($_GET["pay_for_order"])) || in_sk_app() || isset($_GET['in_sk_app'])) {
+		//----- JS
+		wp_deregister_script('hustle_front-js');
+		wp_deregister_script('hustle_front');
+	}
 });
 
 //ORDER COMPLETING PAGE

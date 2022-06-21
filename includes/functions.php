@@ -467,7 +467,85 @@ if (!function_exists('sk_update_cart_coupon')) {
     if (!isset($cart_json['shipping_cost'])) $cart_json['shipping_cost'] = 0; //to be able to calculate total in app
     $shipping_cost = $cart_json['shipping_cost'];
     $coup = new WC_Coupon($coupon);
-    if ($coup->id) {
+
+
+    //check expires
+	$coupon_available = true;
+	$cart_json["coupon_msg"] = "";
+	if ($coup->get_date_expires()) {
+		$expires = $coup->get_date_expires();
+		$ex_date = $expires->getTimestamp();
+		$today = time();
+		$coupon_expired = ($ex_date < $today);
+		if ($coupon_expired) {
+			$coupon_available = false;
+			$cart_json['coupon_msg'] = "Coupon expired.";
+		}	
+	}
+	
+	//check categories includes
+	$coupon_categories = $coup->get_product_categories();
+	//if has categories include
+	if (count($coupon_categories) > 0) {
+		$items = $cart_json["items"];
+		//array of cateogry ids of all cart products
+		$cart_categories = array();
+				
+		//for each products in items
+		foreach ($items as $item) {
+			//product cats
+			$item_cats = wp_get_post_terms( $item["ID"], 'product_cat' );
+			//for each product cats
+			foreach ($item_cats as $item_cat) {
+				//if the id is not already in $cart_categories---- add
+				if (!in_array($item_cat->term_id, $cart_categories)) {
+					$cart_categories[] = $item_cat->term_id;
+				}
+			} 
+		}
+		//let's compare the coupon categories with the cart categories
+		//if any item in both arrays match
+		$cats_intersect = array_intersect($coupon_categories, $cart_categories);
+		$cat_found = (count($cats_intersect) > 0);
+		if (!$cat_found) {
+			$coupon_available = false;
+			$cart_json["coupon_msg"] = "Your cart items does not match coupon specific categories";
+		}
+	}
+		
+	//check coupon categories exclusives
+	$excluded_coupon_categories = $coup->get_excluded_product_categories();
+	//if has categories include
+	if (count($excluded_coupon_categories) > 0) {
+		$items = $cart_json["items"];
+		//array of cateogry ids of all cart products
+		$cart_categories = array();
+				
+		//for each products in items
+		foreach ($items as $item) {
+			//product cats
+			$item_cats = wp_get_post_terms( $item["ID"], 'product_cat' );
+			//for each product cats
+			foreach ($item_cats as $item_cat) {
+				//if the id is not already in $cart_categories---- add
+				if (!in_array($item_cat->term_id, $cart_categories)) {
+					$cart_categories[] = $item_cat->term_id;
+				}
+			} 
+		}
+		//let's compare the coupon categories with the cart categories
+		//if any item in both arrays match
+		$cats_intersect = array_intersect($excluded_coupon_categories, $cart_categories);
+		$cat_found = (count($cats_intersect) > 0);
+		if ($cat_found) {
+			$coupon_available = false;
+			$cart_json["coupon_msg"] = "Your cart items has excluded categories for this coupon";
+		}
+	}
+
+
+
+    if ($coup->id && $coupon_available) {
         $cart_json['coupon'] = $coupon;
         $cart_json['coupon_type'] = $coup->get_discount_type();
         $cart_json['coupon_amount'] = $coup->get_amount();
@@ -661,6 +739,7 @@ if (!function_exists("sk_get_product_variations")) {
             }
             // Price
             $attr_collections['price'] = $variation['display_price'];
+			$attr_collections['regular_price'] = $variation['display_regular_price'];
             $array_return[] = $attr_collections;
         }
         return $array_return;
@@ -1320,7 +1399,7 @@ if (!function_exists("sk_get_user_shipping_address")) {
         $array['shipping_postcode']   = $customer->get_shipping_postcode();
         $array['shipping_country']    = $customer->get_shipping_country();
         $array['shipping_phone']    = $customer->get_billing_phone(); // since there is not method to get phone for shipping
-        $array['shipping_email']    = $customer->get_billing_email(); // since there is not method to get email for shipping
+        $array['shipping_email']    = (!empty($customer->get_billing_email())) ? $customer->get_billing_email() : $customer->get_email(); // since there is not method to get email for shipping
 
         //add profile picture, gender and birthday
         $attachment_id = get_user_meta( $user_id, 'image', true );

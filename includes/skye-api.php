@@ -1170,7 +1170,7 @@ add_action( 'rest_api_init', function() {
             'permission_callback' => 'sk_api_security_check',
         'callback' => function($data) {
             $user_id = $data['user'];
-            $status = (isset($data['status'])) ? $data['status'] : array('wc-processing', 'wc-on-hold', 'wc-completed', 'wc-pending');
+            $status = (isset($data['status'])) ? $data['status'] : array('wc-processing', 'wc-on-hold', 'wc-completed', 'wc-pending', 'wc-shipped', 'wc-delivered', 'wc-local-delivery', 'wc-wc-damage', 'wc-out-for-delivery');
             $date_completed = (isset($data['date_completed'])) ? $data['date_completed'] : null; //value eg: 2018-10-01...2018-10-10
             $paged = isset($data['paged']) ? $data['paged'] : 1;
             $post_per_page = isset($data['per_page']) ? $data['per_page'] : 20;
@@ -1212,8 +1212,9 @@ add_action( 'rest_api_init', function() {
         'callback' => function($data) {
             $order_id = $data['id'];
             $user_id = $data['user_id'];
+			$billing_email = $data["billing_email"] ?? null;
             $order = sk_order_info($order_id);
-            if ((isset($order['customer_id'])) ? ($order['customer_id'] == $user_id || $order['user_id'] == $user_id) : false) {
+            if ((isset($order['customer_id'])) ? ($order['customer_id'] == $user_id || $order['user_id'] == $user_id || ($billing_email == $order["billing_email"])) : false) {
                 return $order;
             } else {
                 return array(

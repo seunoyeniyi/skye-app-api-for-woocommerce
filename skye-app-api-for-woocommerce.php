@@ -21,8 +21,8 @@ define("SKYE_ALLOW_THIN_BANNER", true);
 define("SKYE_ALLOW_GRID_BANNER", true);
 define("SKYE_ALLOW_VIDEO_BANNER", false);
 define("SKYE_ALLOW_RESOURCES", true);
-define("SKYE_ALLOW_SIZE_CHART", true);
-define("SKYE_ENABLE_COUPON_FIRST_ORDER", true);
+define("SKYE_ALLOW_SIZE_CHART", false);
+define("SKYE_ENABLE_COUPON_FIRST_ORDER", false);
 define("SKYE_FIRST_ORDER_COUPON_CODE","NEWCUSTOMER");
 
 
