@@ -472,6 +472,21 @@ include(plugin_dir_path(__FILE__) . 'hooks/custom-user-profile-field.php');
 //END CUSTOM USER PROFILE FIELD
 
 
+//REMOVING TAX FROM CART ITEM
+add_action( 'woocommerce_before_calculate_totals', 'sk_cart_remove_tax' );
+
+function sk_cart_remove_tax( $cart_object ) {
+
+	foreach ( $cart_object->get_cart() as $item ) {
+
+		if( array_key_exists( 'sk_cart_remove_tax', $item ) ) {
+			$item['data']->set_tax_status("none");
+		}
+      
+	}
+	
+}
+
 
 //FOR RICING RULES
 add_action( 'woocommerce_before_calculate_totals', 'add_custom_price' );

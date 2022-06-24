@@ -177,6 +177,7 @@ register_rest_route( SKYE_API_NAMESPACE_V2, '/create-order/(?P<user>.*?)', array
         $status = (isset($data['status'])) ? sanitize_text_field($data['status']) : 'wc-pending';
         $order_note = (isset($data['order_note'])) ? sanitize_text_field($data['order_note']) : 'Ordered from API';
         $payment_method = (isset($data['payment_method'])) ? $data['payment_method'] : null;
+        $remove_tax = isset($data["remove_tax"]);
     
         $return_array = array();
         
@@ -230,7 +231,11 @@ register_rest_route( SKYE_API_NAMESPACE_V2, '/create-order/(?P<user>.*?)', array
              } else {
                  if (isset( $_POST['wooco_ids'])) { unset($_POST['wooco_ids']); }
              }
-            $woocommerce->cart->add_to_cart($item['ID'], $item['quantity']);
+            if ($remove_tax) {
+				$woocommerce->cart->add_to_cart($item['ID'], $item['quantity'], 0, array(), array( 'sk_cart_remove_tax' => true));
+			} else {
+				$woocommerce->cart->add_to_cart($item['ID'], $item['quantity']);
+			}
         }
 
        
