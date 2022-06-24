@@ -2142,3 +2142,121 @@ if (!function_exists("sk_authenticate")) {
 
     }
 }
+
+//using this functio for categories rest page
+if (!function_exists("sk_get_rest_categories")) {
+	function sk_get_rest_categories($data) {
+		
+            $with_sub = (isset($data['with_sub'])) ? true : false; //true for listing sub cateogries with parent output list and false for removing sub categories from parent output list
+            $hide_empty = (isset($data['hide_empty'])) ? 1 : 0;
+            $order_by = (isset($data['order_by'])) ? $data['order_by'] : null;
+            $with_uncategory = (isset($data['with_uncategory'])) ? true : false;
+            // $per_page = (isset($data['per_page'])) ? $data['per_page'] : '';
+
+            $array_return = array();
+
+            $categories = get_categories( array(
+                'taxonomy' => 'product_cat',
+                'orderby' => $order_by,
+                'show_count' => 1,
+                'pad_counts' => 1,
+                'hierarchical' => 1,
+                'title_li' => '',
+                'hide_empty' => $hide_empty,
+            ) );
+            
+            foreach($categories as  $category) {
+            if (!$with_uncategory) {
+                if ($category->slug == 'uncategorized')
+                    continue;
+            }
+                if ($with_sub) { //will join sub categories to the parent list
+                    if (get_term_meta( $category->term_id, 'cat_show_in_app', true ) == "false") continue;
+                    $cat_arr = array(
+                        'ID' => $category->term_id,
+                        'name' => $category->name,
+                        'slug' => $category->slug,
+                        'image' => wp_get_attachment_url( get_term_meta( $category->term_id, 'thumbnail_id', true ) ),
+                        'icon' => wp_get_attachment_url( get_term_meta( $category->term_id, 'product_cat_icon', true ) ),
+                        'link' => get_term_link($category->slug, 'product_cat'),
+                        'count' => $category->count,
+                        'show_in_app' => get_term_meta( $category->term_id, 'cat_show_in_app', true )
+                    );
+                    $sub_cats = get_categories(array(
+                        'taxonomy' => 'product_cat',
+                        'child_of' => 0,
+                        'parent' => $category->term_id,
+                        'orderby' => $order_by,
+                        'show_count' => 1,
+                        'pad_counts' => 1,
+                        'hierarchical' => 1,
+                        'title_li' => '',
+                        'hide_empty' => $hide_empty,
+                    ));
+                    if ($sub_cats) {
+                        $cat_arr['sub_cats'] = array();
+                        foreach ($sub_cats as $cat) {
+                            if (get_term_meta( $cat->term_id, 'cat_show_in_app', true ) == "false") continue;
+                            $cat_arr['sub_cats'][] = array(
+                                'ID' => $cat->term_id,
+                                'name' => $cat->name,
+                                'slug' => $cat->slug,
+                                'image' => wp_get_attachment_url( get_woocommerce_term_meta( $cat->term_id, 'thumbnail_id', true ) ),
+                                'icon' => wp_get_attachment_url( get_term_meta( $cat->term_id, 'product_cat_icon', true ) ),
+                                'link' => get_term_link($cat->slug, 'product_cat'),
+                                'count' => $cat->count,
+                                'show_in_app' => get_term_meta( $cat->term_id, 'cat_show_in_app', true )
+                            );
+                        }
+                    }
+                    $array_return[] = $cat_arr;
+                } else { //will remove sub categories from the parent list
+                    if ($category->category_parent == 0) {
+                        if (get_term_meta( $category->term_id, 'cat_show_in_app', true ) == "false") continue;
+                        $cat_arr = array(
+                            'ID' => $category->term_id,
+                            'name' => $category->name,
+                            'slug' => $category->slug,
+                            'image' => wp_get_attachment_url( get_woocommerce_term_meta( $category->term_id, 'thumbnail_id', true ) ),
+                            'icon' => wp_get_attachment_url( get_term_meta( $category->term_id, 'product_cat_icon', true ) ),
+                            'link' => get_term_link($category->slug, 'product_cat'),
+                            'count' => $category->count,
+                            'show_in_app' => get_term_meta( $category->term_id, 'cat_show_in_app', true )
+                            
+                        );
+                        $sub_cats = get_categories(array(
+                            'taxonomy' => 'product_cat',
+                            'child_of' => 0,
+                            'parent' => $category->term_id,
+                            'orderby' => $order_by,
+                            'show_count' => 1,
+                            'pad_counts' => 1,
+                            'hierarchical' => 1,
+                            'title_li' => '',
+                            'hide_empty' => $hide_empty,
+                        ));
+                        if ($sub_cats) {
+                            $cat_arr['sub_cats'] = array();
+                            foreach ($sub_cats as $cat) {
+                                if (get_term_meta( $cat->term_id, 'cat_show_in_app', true ) == "false") continue;
+                                $cat_arr['sub_cats'][] = array(
+                                    'ID' => $cat->term_id,
+                                    'name' => $cat->name,
+                                    'slug' => $cat->slug,
+                                    'image' => wp_get_attachment_url( get_woocommerce_term_meta( $cat->term_id, 'thumbnail_id', true ) ),
+                                    'icon' => wp_get_attachment_url( get_term_meta( $cat->term_id, 'product_cat_icon', true ) ),
+                                    'link' => get_term_link($cat->slug, 'product_cat'),
+                                    'count' => $cat->count,
+                                    'show_in_app' => get_term_meta( $cat->term_id, 'cat_show_in_app', true )
+                                );
+                            }
+                        }
+                        $array_return[] = $cat_arr;
+                    }
+                }
+            }
+
+            return $array_return;
+	}
+}
+
