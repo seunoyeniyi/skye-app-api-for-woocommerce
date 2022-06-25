@@ -223,6 +223,11 @@ register_rest_route( SKYE_API_NAMESPACE_V2, '/create-order/(?P<user>.*?)', array
             return $return_array;
         
 
+        $country_code = sk_get_country_code($shipping_address["country"]);
+        $state_code = sk_get_state_code($country_code, $shipping_address["state"]);
+
+        //first get tax total before adding another items to new cart
+        // $tax_total = sk_get_cart_total_taxes($woocommerce->cart, $cart['items'], $country_code, $state_code, $shipping_address["postcode"]);
 
          //CREATE CART FROM WITH ITEMS
          foreach ($cart['items'] as $item) {
@@ -282,6 +287,16 @@ register_rest_route( SKYE_API_NAMESPACE_V2, '/create-order/(?P<user>.*?)', array
 
         // return $billing_address;
 
+        //add shipping and calculate totals
+		$woocommerce->cart->get_customer()->set_shipping_country($country_code);
+        $woocommerce->cart->get_customer()->set_shipping_state($state_code);
+        $woocommerce->cart->get_customer()->set_shipping_postcode($shipping_address["postcode"]);
+
+
+        
+        $woocommerce->cart->calculate_shipping();
+		$woocommerce->cart->calculate_totals();
+
         //CREATE ORDER - FROM CART
         $checkout = WC()->checkout();
         $order_id = $checkout->create_order(array(
@@ -302,19 +317,19 @@ register_rest_route( SKYE_API_NAMESPACE_V2, '/create-order/(?P<user>.*?)', array
             $order->apply_coupon($cart['coupon']);
         }
         
-        //set address
-        if (!is_null($billing_address['email'])) {
-            $order->set_address($billing_address, 'billing');
-        } else { //use profile shipping address
-            $order->set_address( $address, 'billing' );
-        }
+        //set address - NOT ADDING ADDRESS HERE BECAUE OF VAT ISSUE
+        // if (!is_null($billing_address['email'])) {
+        //     $order->set_address($billing_address, 'billing');
+        // } else { //use profile shipping address
+        //     $order->set_address( $address, 'billing' );
+        // }
 
-        if (!is_null($shipping_address['email'])) {
-            $order->set_address($shipping_address, 'shipping');
-        } else { //use the profile shipping address
-            $order->set_address( $address, 'shipping' );
+        // if (!is_null($shipping_address['email'])) {
+        //     $order->set_address($shipping_address, 'shipping');
+        // } else { //use the profile shipping address
+        //     $order->set_address( $address, 'shipping' );
 
-        }
+        // }
 
         // set payment gateways
         $payment_gateways = WC()->payment_gateways->payment_gateways();
@@ -332,6 +347,7 @@ register_rest_route( SKYE_API_NAMESPACE_V2, '/create-order/(?P<user>.*?)', array
         
         //set shipping cost
         $item = new WC_Order_Item_Shipping();
+
 
         $method_title = "Flat rate"; //default
         if ($cart['shipping_method'] == "local_pickup") $method_title = "Local pickup";
@@ -355,6 +371,7 @@ register_rest_route( SKYE_API_NAMESPACE_V2, '/create-order/(?P<user>.*?)', array
         // ));
         $order->add_item( $item );
 
+    
         //deduct reward discount if applied
         if ($cart['apply_reward'] && sk_user_exists($user_id)) {
             global $wc_points_rewards;
@@ -376,6 +393,7 @@ register_rest_route( SKYE_API_NAMESPACE_V2, '/create-order/(?P<user>.*?)', array
         //tell where it was ordered from
         $order->update_meta_data( 'ordered_from', 'api' );
         
+        
         $order->calculate_totals();
         //PAYMENT STATUS
         //wc-processing - for payed but order not completed
@@ -387,6 +405,20 @@ register_rest_route( SKYE_API_NAMESPACE_V2, '/create-order/(?P<user>.*?)', array
         //wc-failed - for failed order
         $order->update_status($status, $order_note, true);
         $order->save();
+
+        //update order address after saving -- issue with clearing VAT
+        if (!is_null($billing_address['email'])) {
+            $order->set_address($billing_address, 'billing');
+        } else { //use profile shipping address
+            $order->set_address( $address, 'billing' );
+        }
+        
+        if (!is_null($shipping_address['email'])) {
+            $order->set_address($shipping_address, 'shipping');
+        } else { //use the profile shipping address
+            $order->set_address( $address, 'shipping' );
+        }
+		$order->save();
 
         //clear cart if set
         if (isset($data['clear_cart'])) sk_delete_user_cart($user_id);
@@ -418,6 +450,8 @@ register_rest_route( SKYE_API_NAMESPACE_V2, '/cart/(?P<user>.*?)', array(
         require_once(WC_ABSPATH . 'includes/wc-notice-functions.php');
 
         global $wpdb, $woocommerce;
+
+        $show_tax = $data["show_tax"];
 
         $woocommerce = WC();
         $woocommerce->session = new WC_Session_Handler();
@@ -537,6 +571,12 @@ register_rest_route( SKYE_API_NAMESPACE_V2, '/cart/(?P<user>.*?)', array(
             //we don't need error message from perivous cart error
             if (isset($return_array['code'])) unset($return_array['code']);
             if (isset($return_array['msg'])) unset($return_array['msg']);
+
+
+            //tax
+			if ($show_tax) {
+				$return_array["tax_total"] = sk_get_cart_total_taxes($return_array['items'], "", "", "");
+			}
     
     
         

@@ -2260,3 +2260,52 @@ if (!function_exists("sk_get_rest_categories")) {
 	}
 }
 
+if (!function_exists("sk_get_cart_total_taxes")) {
+    function sk_get_cart_total_taxes($items, $country_code = "", $state_code = "", $postcode = "") {
+        require_once(WC_ABSPATH . 'includes/wc-cart-functions.php');
+        require_once(WC_ABSPATH . 'includes/wc-notice-functions.php');
+
+        global $wpdb, $woocommerce;
+
+        $woocommerce = WC();
+        $woocommerce->session = new WC_Session_Handler();
+        $woocommerce->session->init();
+        $woocommerce->customer = new WC_Customer();
+        $woocommerce->cart = new WC_Cart();
+
+        $woocommerce->cart->empty_cart();
+
+        $cart = $woocommerce->cart;
+
+        $cart->empty_cart();
+
+        //add items to cart
+        foreach ($items as $item) {
+            if (isset($item['wooco_ids'])) {
+                $_POST['wooco_ids'] = $item['wooco_ids'];
+            } else {
+                if (isset( $_POST['wooco_ids'])) { unset($_POST['wooco_ids']); }
+            }
+            
+           $cart->add_to_cart($item['ID'], $item['quantity']);
+           
+       }
+
+        //add shipping and calculate totals
+        $country_code = sk_get_country_code($country_code);
+		$cart->get_customer()->set_shipping_country($country_code);
+        $cart->get_customer()->set_shipping_state(sk_get_state_code($country_code, $state_code));
+        $cart->get_customer()->set_shipping_postcode($postcode);
+
+
+        
+        $cart->calculate_shipping();
+		$cart->calculate_totals();
+
+        $tax_total = $cart->tax_total;
+
+        $cart->empty_cart();
+
+        return $tax_total;
+    }
+}

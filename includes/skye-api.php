@@ -972,6 +972,8 @@ add_action( 'rest_api_init', function() {
             'permission_callback' => 'sk_api_security_check',
         'callback' => function($data) {
             global $wpdb;
+
+            $show_tax = $data["show_tax"];
             
 
             $cart_table = $wpdb->prefix . "skye_carts";
@@ -1034,6 +1036,10 @@ add_action( 'rest_api_init', function() {
             if (isset($return_array['code'])) unset($return_array['code']);
             if (isset($return_array['msg'])) unset($return_array['msg']);
 
+            //tax
+			if ($show_tax) {
+				$return_array["tax_total"] = sk_get_cart_total_taxes($return_array['items'], "", "", "");
+			}
             
             return $return_array;
         }
