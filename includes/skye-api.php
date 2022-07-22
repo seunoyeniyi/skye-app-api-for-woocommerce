@@ -5,8 +5,9 @@ add_action( 'rest_api_init', function() {
             'methods' => 'GET',
             'permission_callback' => 'sk_api_security_check',
             'callback' => function($data) {
-                $with_categories = isset($data["with_categories"]);
-
+				$with_categories = isset($data["with_categories"]);
+				$menu_name = $data["menu_name"] ?? null;
+				
                 $arr = array();
                 $arr['name'] = get_bloginfo('name'); // – Site title (set in Settings > General)
                 $arr['description'] = get_bloginfo('description'); // – Site tagline (set in Settings > General)
@@ -47,10 +48,14 @@ add_action( 'rest_api_init', function() {
                 // $arr["enable_sale_banners"] = get_option('sk_enable_sale_banners', 0);
                 $arr["enable_grid_banners"] = get_option('sk_enable_grid_banners', 0);
                 $arr["enable_video_banners"] = get_option('sk_enable_video_banners', 0);
-
-                //adding categories if set
+				
+				//adding categories if set
 				if ($with_categories) {
 					$arr["categories"] = sk_get_rest_categories($data);
+				}
+				//add menu
+				if (!is_null($menu_name)) {
+					$arr['menu'] = sk_get_rest_menu($data);
 				}
 
                 return $arr;
@@ -200,7 +205,6 @@ add_action( 'rest_api_init', function() {
                 }
             } else {
                 $auth = sk_authenticate( (!is_null($username)) ? $username : $email, $password);
-                
                 //replace cart user if set
                 if (!is_null($replace_cart_user)) {
                     //if user exists
@@ -696,6 +700,7 @@ add_action( 'rest_api_init', function() {
         'methods' => 'GET',
             'permission_callback' => 'sk_api_security_check',
         'callback' => function($data) {
+			
             $paged = isset($data['paged']) ? $data['paged'] : 1;
             $post_per_page = isset($data['per_page']) ? $data['per_page'] : 20;
             $product_cat = isset($data['cat']) ? $data['cat'] : null;
@@ -705,6 +710,7 @@ add_action( 'rest_api_init', function() {
 			$hide_description = isset($data['hide_description']);
             $show_variation = isset($data['show_variation']);
             $show_outofstock = isset($data['show_outofstock']);
+			
 
             $query_args = array(
                 'post_type' => 'product',
@@ -714,6 +720,8 @@ add_action( 'rest_api_init', function() {
                 'post__in' => $post_in,
                 's' => $search,
             );
+			
+			
 			if (!is_null($tag)) {
 				$query_args["product_tag"] = $tag;
 			}
@@ -759,6 +767,7 @@ add_action( 'rest_api_init', function() {
                         'taxonomy' => 'product_visibility',
                         'field'    => 'name',
                         'terms'    => 'featured',
+						'operator' => 'IN',
                     )
                 );
             }
@@ -813,26 +822,26 @@ add_action( 'rest_api_init', function() {
             }
             
 
-            // $query_args['meta_query'][] = array(
-            //     'relation' => 'OR',
-            //     array(
-            //         'key'     => '_price',
-            //         'value'   => '',
-            //         'type'    => 'numeric',
-            //         'compare' => '!='
-            //     ),
-            //     array(
-            //         'key'     => '_price',
-            //         'value'   => 0,
-            //         'type'    => 'numeric',
-            //         'compare' => '!='
-            //     )
-            // );
+//             $query_args['meta_query'][] = array(
+//                 'relation' => 'OR',
+//                 array(
+//                     'key'     => '_price',
+//                     'value'   => '',
+//                     'type'    => 'numeric',
+//                     'compare' => '!='
+//                 ),
+//                 array(
+//                     'key'     => '_price',
+//                     'value'   => 0,
+//                     'type'    => 'numeric',
+//                     'compare' => '!='
+//                 )
+//             );
 
-   
-
+			
             
             $query = new WP_Query($query_args);
+			
 
             if (!$query->have_posts())
             return null;
@@ -934,7 +943,7 @@ add_action( 'rest_api_init', function() {
         'methods' => 'POST',
             'permission_callback' => 'sk_api_security_check',
         'callback' => function($data) {
- 
+			
             $user_id = $data['user'];
             sk_update_cart_coupon($user_id, $data['coupon']);
 
@@ -972,8 +981,8 @@ add_action( 'rest_api_init', function() {
             'permission_callback' => 'sk_api_security_check',
         'callback' => function($data) {
             global $wpdb;
-
-            $show_tax = $data["show_tax"];
+			
+			$add_tax = $data["add_tax"];
             
 
             $cart_table = $wpdb->prefix . "skye_carts";
@@ -983,10 +992,18 @@ add_action( 'rest_api_init', function() {
 
             $return_array = array();
 
+            $update_db = true;
+
             $return_array = json_decode(sk_get_cart_value($user_id), true);
             // $coupon = new WC_Coupon("44gb97sb");
             // return $coupon->get_discount_type();
             // return $coupon->get_amount();
+
+            //tax
+			if ($add_tax) {
+				$update_db = true;
+				$return_array["tax_total"] = sk_get_cart_total_taxes($return_array['items'], "", "", "");
+			}
 
             //RESET REWARDS CALCULATIONS
         if (class_exists("WC_Points_Rewards_Manager")) {
@@ -1012,7 +1029,7 @@ add_action( 'rest_api_init', function() {
             ));
         }
 
-            $update_db = false;
+            
             //check for out of stock products
             foreach ($return_array['items'] as $index => $item) {
                 $product = wc_get_product($item['ID']);
@@ -1035,11 +1052,8 @@ add_action( 'rest_api_init', function() {
             //we don't need error message from perivous cart error
             if (isset($return_array['code'])) unset($return_array['code']);
             if (isset($return_array['msg'])) unset($return_array['msg']);
-
-            //tax
-			if ($show_tax) {
-				$return_array["tax_total"] = sk_get_cart_total_taxes($return_array['items'], "", "", "");
-			}
+			
+			
             
             return $return_array;
         }
@@ -1331,8 +1345,8 @@ add_action( 'rest_api_init', function() {
         'methods' => 'GET',
             'permission_callback' => 'sk_api_security_check',
         'callback' => function($data) {
-
-            return sk_get_rest_categories($data);
+			
+			return sk_get_rest_categories($data);
 
         }
     ));
@@ -1863,6 +1877,16 @@ add_action( 'rest_api_init', function() {
             $ssid =  $data["ssid"] ?? null;
 
             return null;
+        }
+    ));
+	
+	//menus
+    register_rest_route( SKYE_API_NAMESPACE_V1, '/menu/(?P<menu_name>.*?)', array(
+        'methods' => 'GET',
+            'permission_callback' => 'sk_api_security_check',
+        'callback' => function($data) {
+			
+			return sk_get_rest_menu($data);
         }
     ));
     

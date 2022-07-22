@@ -25,6 +25,7 @@ if ($_SERVER['REQUEST_METHOD'] == "POST" && isset($_POST['save-app'])) {
 	update_option('sk_enable_grid_banners', isset($_POST['enable_grid_banners']) ? 1 : 0);
 	update_option('sk_enable_video_banners', isset($_POST['enable_video_banners']) ? 1 : 0);
 	update_option('sk_push_api_key', $_POST['push_api_key']);
+	update_option('sk_push_app_id', $_POST['push_app_id']);
 
 	?>
 	<div id="message" class="updated inline">
@@ -176,7 +177,7 @@ if ($_SERVER['REQUEST_METHOD'] == "POST" && isset($_POST['save-app'])) {
 		</table>
 		<h2>Push Notification</h2>
 		<div id="store_address-description">
-			<p>Provide the API keys for your push notification, support only API key from Firebase(FCM)</p>
+			<p>Provide the API keys for your push notification, support only API key from Firebase(FCM) or OneSignal</p>
 		</div>
 		<table class="form-table">
 
@@ -187,6 +188,14 @@ if ($_SERVER['REQUEST_METHOD'] == "POST" && isset($_POST['save-app'])) {
 					</th>
 					<td class="forminp forminp-text">
 						<input name="push_api_key" id="push_api_key" type="text" style="width: 80%;" value="<?php echo get_option("sk_push_api_key", ""); ?>" class="" placeholder="Key">
+					</td>
+				</tr>
+				<tr valign="top">
+					<th scope="row" class="titledesc">
+						<label for="push_app_id">APP ID <span class="woocommerce-help-tip"></span></label>
+					</th>
+					<td class="forminp forminp-text">
+						<input name="push_app_id" rows="5" id="push_app_id" type="text" style="width: 80%;" class="" value="<?php echo get_option("sk_push_app_id", ""); ?>" placeholder="App ID">
 					</td>
 				</tr>
 			</tbody>

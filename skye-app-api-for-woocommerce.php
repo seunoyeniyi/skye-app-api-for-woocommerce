@@ -24,6 +24,7 @@ define("SKYE_ALLOW_RESOURCES", true);
 define("SKYE_ALLOW_SIZE_CHART", false);
 define("SKYE_ENABLE_COUPON_FIRST_ORDER", false);
 define("SKYE_FIRST_ORDER_COUPON_CODE","NEWCUSTOMER");
+define("SKYE_PUSH_PROVIDER","onesignal");
 
 
 function find_matching_product_variation_id($product_id, $attributes)

@@ -451,7 +451,7 @@ register_rest_route( SKYE_API_NAMESPACE_V2, '/cart/(?P<user>.*?)', array(
 
         global $wpdb, $woocommerce;
 
-        $show_tax = $data["show_tax"];
+        $add_tax = $data["add_tax"];
 
         $woocommerce = WC();
         $woocommerce->session = new WC_Session_Handler();
@@ -469,10 +469,20 @@ register_rest_route( SKYE_API_NAMESPACE_V2, '/cart/(?P<user>.*?)', array(
 
         $return_array = array();
 
+        $update_db = true;
+
         $return_array = json_decode(sk_get_cart_value($user_id), true);
         // $coupon = new WC_Coupon("44gb97sb");
         // return $coupon->get_discount_type();
         // return $coupon->get_amount();
+
+        //tax
+			if ($add_tax) {
+				$update_db = true;
+				$return_array["tax_total"] = sk_get_cart_total_taxes($return_array['items'], "", "", "");
+			}
+
+        
 
         //RESET REWARDS CALCULATIONS
     if (class_exists("WC_Points_Rewards_Manager")) {
@@ -574,7 +584,7 @@ register_rest_route( SKYE_API_NAMESPACE_V2, '/cart/(?P<user>.*?)', array(
 
 
             //tax
-			if ($show_tax) {
+			if ($add_tax) {
 				$return_array["tax_total"] = sk_get_cart_total_taxes($return_array['items'], "", "", "");
 			}
     

@@ -28,23 +28,61 @@ if ($_SERVER['REQUEST_METHOD'] == "POST" && isset($_POST['notify'])) {
    
     $data = array(
         'title' => $title,
-        'body' => $text
+        'body' => $text,
+        'topic' => '/topics/general',
     );
     if (!empty($image) && strlen($image) > 10) {
         $data['image'] = $image;
+        $data['big_picture'] = $image;
     }
 
     if ($schedule_type != 'now') {
         $data["isScheduled"] = "true";
         $data["scheduledTime"] = $schedule_date . ' ' . $schedule_time;
+        $data["send_after"] = $schedule_date . ' ' . $schedule_time; //for one signal
     }
-    
-    $push = sk_push_notification($devices, $data);
 
+    $push = false;
+
+    
+
+    //since this is a general campaign
+    if (SKYE_PUSH_PROVIDER == "onesignal") {
+        $push = sk_push_notification([], $data);
+    } else {
+        //since it's a general broadcast
+        $push = sk_push_notification($devices, $data);
+
+        // if (count($devices) > 1000) {
+        //     $devices_chunk = array_chunk($devices, 1000);
+        //     foreach ($devices_chunk as $devices_each) {
+        //         $push = sk_push_notification($devices_each, $data);
+        //     }
+        // } else {
+        //     $push = sk_push_notification($devices, $data);
+        // }
+        
+    }
+
+
+    $message = "";
+    $count = count($devices);
+
+
+    if (SKYE_PUSH_PROVIDER == "onesignal") {
+        $result = json_decode($push, true);
+        if ($result["recipients"] > 0) {
+            $push = true;
+            $count = $result["recipients"];
+        } else {
+            $push = false;
+            $message = $result["errors"][0];
+        }
+    }
    if ($push) { ?>
-    <div id="message" class="updated inline"><p style="text-align: center;"><strong>Notification sent to <?php echo count($devices); ?> customers</strong></p></div>
+    <div id="message" class="updated inline"><p style="text-align: center;"><strong>Notification sent to subscribed <?php //echo $count; ?> customers</strong></p></div>
   <?php } else { ?>
-    <div id="message" class="updated inline"><p style="text-align: center;"><strong>Error... Unable to send notification, please contact the technical person in charge.</strong></p></div>
+    <div id="message" class="updated inline"><p style="text-align: center;"><strong>Error... Unable to send notification, please notify the developer in charge.</strong></p></div>
    <?php } ?>
 
    <?php
@@ -102,7 +140,7 @@ if ($_SERVER['REQUEST_METHOD'] == "POST" && isset($_POST['notify'])) {
                     // When an image is selected, run a callback.
                     sk_image_frame.on('select', function() {
                         var attachment = sk_image_frame.state().get('selection').first().toJSON();
-                        var attachment_thumbnail = attachment.sizes.thumbnail || attachment.sizes.full;
+                        var attachment_thumbnail = attachment.sizes.full;
 
                         jQuery('#notification_image').val(attachment_thumbnail.url);
                         jQuery('#noty_image').find('img').attr('src', attachment_thumbnail.url);
